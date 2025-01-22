@@ -37,14 +37,14 @@ export default class OpHeldHandler extends MessageHandler<OpHeld> {
             return false;
         }
 
-        if (player.delayed) {
+        player.clearPendingAction();
+        if (player.busy()) {
             return false;
         }
 
         player.lastItem = item;
         player.lastSlot = slot;
 
-        player.clearPendingAction();
         player.moveClickRequest = false; // uses the dueling ring op to move whilst busy & queue pending: https://youtu.be/GPfN3Isl2rM
         player.faceEntity = -1;
         player.masks |= player.entitymask;

@@ -37,6 +37,7 @@ import {
 } from '#/engine/GameMap.js';
 import NonPathingEntity from '#/engine/entity/NonPathingEntity.js';
 import Visibility from '#/engine/entity/Visibility.js';
+import ScriptState from '../script/ScriptState.js';
 
 type TargetSubject = {
     type: number,
@@ -74,7 +75,7 @@ export default abstract class PathingEntity extends Entity {
     walktrigger: number = -1;
     walktriggerArg: number = 0; // used for npcs
 
-    delayed: boolean = false;
+    activeScript: ScriptState | null = null;
     delayedUntil: number = -1;
     interacted: boolean = false;
     repathed: boolean = false;
@@ -620,6 +621,10 @@ export default abstract class PathingEntity extends Entity {
         this.targetSubject = {type: -1, com: -1};
         this.apRange = 10;
         this.apRangeCalled = false;
+    }
+
+    delayed(): boolean {
+        return this.activeScript !== null && this.activeScript.execution === ScriptState.DELAYED;
     }
 
     protected getCollisionStrategy(): CollisionType | null {

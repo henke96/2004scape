@@ -13,9 +13,6 @@ import LoggerEventType from '#/server/logger/LoggerEventType.js';
 export default class OpHeldUHandler extends MessageHandler<OpHeldU> {
     handle(message: OpHeldU, player: Player): boolean {
         const { obj: item, slot, component: comId, useObj: useItem, useSlot, useComponent: useComId } = message;
-        if (player.delayed) {
-            return false;
-        }
 
         const com = Component.get(comId);
         if (typeof com === 'undefined' || !player.isComponentVisible(com)) {
@@ -59,6 +56,11 @@ export default class OpHeldUHandler extends MessageHandler<OpHeldU> {
             }
         }
 
+        player.clearPendingAction();
+        if (player.busy()) {
+            return false;
+        }
+
         player.lastItem = item;
         player.lastSlot = slot;
         player.lastUseItem = useItem;
@@ -67,7 +69,6 @@ export default class OpHeldUHandler extends MessageHandler<OpHeldU> {
         const objType = ObjType.get(player.lastItem);
         const useObjType = ObjType.get(player.lastUseItem);
 
-        player.clearPendingAction();
         player.faceEntity = -1;
         player.masks |= player.entitymask;
 

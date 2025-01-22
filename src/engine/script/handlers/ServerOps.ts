@@ -306,8 +306,8 @@ const ServerOps: CommandHandlers = {
     // https://x.com/JagexAsh/status/1730321158858276938
     // https://x.com/JagexAsh/status/1814230119411540058
     [ScriptOpcode.WORLD_DELAY]: state => {
-        // arg is popped elsewhere
-        state.execution = ScriptState.WORLD_SUSPENDED;
+        World.enqueueScript(state, state.popInt());
+        state.execution = ScriptState.DELAYED;
     },
 
     [ScriptOpcode.PROJANIM_PL]: state => {

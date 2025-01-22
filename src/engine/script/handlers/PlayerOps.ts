@@ -88,7 +88,7 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        if (!player || !player.canAccess()) {
+        if (!player || player.busy()) {
             state.pushInt(0);
             return;
         }
@@ -326,22 +326,23 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        state.activePlayer.delayed = true;
         state.activePlayer.delayedUntil = World.currentTick + 1;
-        state.execution = ScriptState.SUSPENDED;
+        state.activePlayer.activeScript = state;
+        state.execution = ScriptState.DELAYED;
     }),
 
     [ScriptOpcode.P_COUNTDIALOG]: checkedHandler(ProtectedActivePlayer, state => {
         state.activePlayer.write(new PCountDialog());
+        state.activePlayer.activeScript = state;
         state.execution = ScriptState.COUNTDIALOG;
     }),
 
     // https://x.com/JagexAsh/status/1684478874703343616
     // https://x.com/JagexAsh/status/1780932943038345562
     [ScriptOpcode.P_DELAY]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.delayed = true;
         state.activePlayer.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
-        state.execution = ScriptState.SUSPENDED;
+        state.activePlayer.activeScript = state;
+        state.execution = ScriptState.DELAYED;
     }),
 
     [ScriptOpcode.P_OPHELD]: checkedHandler(ProtectedActivePlayer, () => {
@@ -385,6 +386,7 @@ const PlayerOps: CommandHandlers = {
 
     // https://x.com/JagexAsh/status/1389465615631519744
     [ScriptOpcode.P_PAUSEBUTTON]: checkedHandler(ProtectedActivePlayer, state => {
+        state.activePlayer.activeScript = state;
         state.execution = ScriptState.PAUSEBUTTON;
     }),
 
