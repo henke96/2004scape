@@ -131,7 +131,6 @@ switch_int($choice) {
 [label,shipyard_password_check](int $first_val, int $second_val, int $third_val)
 if($first_val = 1 & $second_val = 2 & $third_val = 2) {
     ~chatnpc("<p,neutral>Sorry to have kept you.");
-    if_close;
     p_delay(4); // 4t todo: -1 after delay change
     @open_shipyard_gate;
 }

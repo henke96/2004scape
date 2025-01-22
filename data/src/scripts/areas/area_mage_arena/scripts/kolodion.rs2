@@ -125,7 +125,6 @@ if (~can_enter_mage_arena = false) {
 
 [label,kolodion_teleport]
 // for some reason you can move for 1 tick during this
-if_close;
 def_int $delay = max(sub(npc_range(coord), 1), 0);
 npc_queue(4, 30, $delay);
 npc_setmode(opplayer2);

@@ -12,7 +12,6 @@ if($option = 1) {
         ~chatplayer("<p,sad>I haven't brought my diamonds with me.");
         return;
     }
-    if_close;
     inv_del(inv, diamond, 1);
     mes("You give the doorman a diamond.");
     ~open_and_close_door(loc_1535, ~check_axis(coord, loc_coord, loc_angle), false);

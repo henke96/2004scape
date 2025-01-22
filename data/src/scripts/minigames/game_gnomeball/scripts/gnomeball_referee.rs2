@@ -46,7 +46,6 @@ if (inv_getobj(worn, ^wearpos_rhand) = gnomeball) {
     ~chatnpc("<p,neutral>Ahh I see you have your own ball. We can't play with|that; I'll give it back when you leave.");
     inv_del(inv, gnomeball, inv_total(inv, gnomeball));
 }
-if_close;
 npc_say("Peeeeeeeeeep");
 sound_synth(whistle, 0, 0);
 mes("The ref throws the ball into the air.");

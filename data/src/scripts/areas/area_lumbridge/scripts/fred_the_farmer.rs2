@@ -67,7 +67,6 @@ if(inv_total(inv, ball_of_wool) > 0) {
 
 [label,fred_give_wool]
 if(inv_total(inv, ball_of_wool) > 0 & %sheep_progress ! ^sheep_last_wool) {
-    if_close;
     inv_del(inv, ball_of_wool, 1);
     mes("You give Fred a ball of wool.");
     %sheep_progress = calc(%sheep_progress + 1);

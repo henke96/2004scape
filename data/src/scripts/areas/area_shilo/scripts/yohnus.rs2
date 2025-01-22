@@ -14,7 +14,6 @@ switch_int(~p_choice2("Use Furnace - 20 Gold", 1, "No thanks!", 2)) {
         }
         inv_del(inv, coins, 20);
         ~chatnpc("<p,neutral>Thanks Bwana! Enjoy the facilities!");
-        if_close;
         p_delay(0);
         ~forcemove(0_44_46_40_19);
         if(loc_find(coord, loc_2266) = true) {

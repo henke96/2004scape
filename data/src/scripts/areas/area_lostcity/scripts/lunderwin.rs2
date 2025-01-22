@@ -5,7 +5,6 @@ if(inv_total(inv, cabbage) > 0) {
     switch_int(~p_choice2("Yes, I will sell you all my cabbages.", 1, "No, I will keep my cabbbages.", 2)) {
         case 1 :
             ~chatplayer("<p,neutral>Yes, I'll sell you all my cabbages.");
-            if_close;
             while(inv_total(inv, cabbage) > 0) {
                 // RSC sells 1 at a time with delay, OSRS technically does as well but with no delay, we'll copy RSC here
                 mes("You sell a cabbage.");

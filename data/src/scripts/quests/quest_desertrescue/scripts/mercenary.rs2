@@ -55,7 +55,6 @@ inv_del(inv, coins, 20);
 
 [proc,mercenary_attack]
 npc_say("Guards!! Guards!"); // non-click here to continue dialogue in osrs
-if_close;
 npc_setmode(opplayer2);
 p_delay(2);
 npc_say("Let's see how good you are with Desert Survival techniques.");

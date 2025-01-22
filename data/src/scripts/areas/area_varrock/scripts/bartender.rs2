@@ -43,7 +43,6 @@ if(inv_total(inv, coins) < 10) {
     ~chatplayer("<p,sad>I don't have 10 coins right now.");
     return;
 }   
-if_close;
 inv_del(inv, coins, 10);
 mes("You buy a pint of Olde Suspiciouse.");
 p_delay(2);
@@ -120,7 +119,6 @@ if(inv_total(inv, coins) < 50) {
     ~chatplayer("<p,sad>I don't have 50 coins.");
     return;
 }  
-if_close;
 inv_del(inv, coins, 50);
 mes("You buy some Uncle Humphrey's Gutrot.");
 p_delay(2);
