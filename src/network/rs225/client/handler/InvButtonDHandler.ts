@@ -6,7 +6,7 @@ import Environment from '#/util/Environment.js';
 import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import ScriptRunner from '#/engine/script/ScriptRunner.js';
 import ServerTriggerType from '#/engine/script/ServerTriggerType.js';
-import UpdateInvPartial from '#/network/server/model/UpdateInvPartial.js';
+import ScriptState from '#/engine/script/ScriptState.js';
 
 export default class InvButtonDHandler extends MessageHandler<InvButtonD> {
     handle(message: InvButtonD, player: Player): boolean {
@@ -28,20 +28,27 @@ export default class InvButtonDHandler extends MessageHandler<InvButtonD> {
             return false;
         }
 
-        if (player.delayed) {
-            // do nothing; revert the client visual
-            player.write(new UpdateInvPartial(comId, inv, slot, targetSlot));
-            return false;
-        }
-
-        player.lastSlot = slot;
-        player.lastTargetSlot = targetSlot;
-
         const dragTrigger = ScriptProvider.getByTrigger(ServerTriggerType.INV_BUTTOND, comId);
         if (dragTrigger) {
             const root = Component.get(com.rootLayer);
 
-            player.executeScript(ScriptRunner.init(dragTrigger, player), root.overlay == false);
+            const protect = root.overlay == false;
+            if (protect && player.activeScript !== null) {
+                // osrs inv dragging cancels dialogs (e.g. bank dragging)
+                if (player.activeScript.execution === ScriptState.COUNTDIALOG) {
+                    player.activeScript = null;
+                } else {
+                    // osrs doesn't send partial inv update here.
+                    // Tested by equipping mind shield in equipment stats modal inside
+                    // barbarian assualt (where it still calls p_delay), then swapping
+                    // inventory items next tick. Result is an out of sync inventory.
+                    return false;
+                }
+            }
+
+            player.lastSlot = slot;
+            player.lastTargetSlot = targetSlot;
+            player.executeScript(ScriptRunner.init(dragTrigger, player), protect);
         } else if (Environment.NODE_DEBUG) {
             player.messageGame(`No trigger for [inv_buttond,${com.comName}]`);
         }

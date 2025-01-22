@@ -278,20 +278,16 @@ export default class Player extends PathingEntity {
     cameraPackets: LinkList<CameraInfo> = new LinkList();
     timers: Map<number, EntityTimer> = new Map();
     tabs: number[] = new Array(14).fill(-1);
-    modalState = 0; // 1 - main, 2 - chat, 4 - side, 8 - tutorial
-    modalMain = -1;
-    lastModalMain = -1;
-    modalChat = -1;
-    lastModalChat = -1;
-    modalSide = -1;
-    lastModalSide = -1;
-    modalTutorial = -1;
-    refreshModal = false;
-    refreshModalClose = false;
-    requestModalClose = false;
+    modalMain: number = -1;
+    lastModalMain: number = -1;
+    modalChat: number = -1;
+    lastModalChat: number = -1;
+    modalSide: number = -1;
+    lastModalSide: number = -1;
+    modalTutorial: number = -1;
+    refreshModal: boolean = false;
+    requestModalClose: boolean = false;
 
-    protect: boolean = false; // whether protected access is available
-    activeScript: ScriptState | null = null;
     resumeButtons: number[] = [];
 
     lastItem: number = -1; // opheld, opheldu, opheldt, inv_button
@@ -360,7 +356,6 @@ export default class Player extends PathingEntity {
         }
         super.resetPathingEntity();
         this.repathed = false;
-        this.protect = false;
         this.messageColor = null;
         this.messageEffect = null;
         this.messageType = null;
@@ -474,7 +469,7 @@ export default class Player extends PathingEntity {
     processEngineQueue() {
         for (let request = this.engineQueue.head(); request !== null; request = this.engineQueue.next()) {
             const delay = request.delay--;
-            if (this.canAccess() && delay <= 0) {
+            if (!this.busy() && delay <= 0) {
                 const script = ScriptRunner.init(request.script, this, null, request.args);
                 this.executeScript(script, true);
 
@@ -487,7 +482,7 @@ export default class Player extends PathingEntity {
 
     updateMovement(repathAllowed: boolean = true): boolean {
         // players cannot walk if they have a modal open *and* something in their queue, confirmed as far back as 2005
-        if (this.moveClickRequest && this.busy() && (this.queue.head() != null || this.engineQueue.head() != null || this.walktrigger !== -1)) {
+        if (this.moveClickRequest && this.busy() && (this.hasQueuedScript() || this.walktrigger !== -1)) {
             this.recoverEnergy(false);
             return false;
         }
@@ -533,7 +528,7 @@ export default class Player extends PathingEntity {
         if (!moved || this.stepsTaken === 0) {
             return;
         }
-        if (!this.delayed && this.moveSpeed === MoveSpeed.RUN && this.stepsTaken > 1) {
+        if (!this.delayed() && this.moveSpeed === MoveSpeed.RUN && this.stepsTaken > 1) {
             const weightKg = Math.floor(this.runweight / 1000);
             const clampWeight = Math.min(Math.max(weightKg, 0), 64);
             const loss = (67 + (67 * clampWeight) / 64) | 0;
@@ -542,7 +537,7 @@ export default class Player extends PathingEntity {
     }
 
     private recoverEnergy(moved: boolean): void {
-        if (!this.delayed && (!moved || this.moveSpeed !== MoveSpeed.RUN) && this.runenergy < 10000) {
+        if (!this.delayed() && (!moved || this.moveSpeed !== MoveSpeed.RUN) && this.runenergy < 10000) {
             const recovered = (this.baseLevels[PlayerStat.AGILITY] / 9 | 0) + 8;
             this.runenergy = Math.min(this.runenergy + recovered, 10000);
         }
@@ -562,7 +557,7 @@ export default class Player extends PathingEntity {
         if (this.modalTutorial !== -1) {
             const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalTutorial);
             if (closeTrigger) {
-                this.enqueueScript(closeTrigger, PlayerQueueType.ENGINE);
+                this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
 
             this.modalTutorial = -1;
@@ -573,18 +568,14 @@ export default class Player extends PathingEntity {
     closeModal() {
         this.weakQueue.clear();
 
-        if (!this.delayed) {
-            this.protect = false;
-        }
-
-        if (this.modalState === 0) {
-            return;
+        if (!this.delayed()) {
+            this.activeScript = null;
         }
 
         if (this.modalMain !== -1) {
             const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalMain);
             if (closeTrigger) {
-                this.enqueueScript(closeTrigger, PlayerQueueType.ENGINE);
+                this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
 
             this.modalMain = -1;
@@ -593,7 +584,7 @@ export default class Player extends PathingEntity {
         if (this.modalChat !== -1) {
             const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalChat);
             if (closeTrigger) {
-                this.enqueueScript(closeTrigger, PlayerQueueType.ENGINE);
+                this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
 
             this.modalChat = -1;
@@ -602,32 +593,23 @@ export default class Player extends PathingEntity {
         if (this.modalSide !== -1) {
             const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalSide);
             if (closeTrigger) {
-                this.enqueueScript(closeTrigger, PlayerQueueType.ENGINE);
+                this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
 
             this.modalSide = -1;
         }
-
-        this.modalState = 0;
-        this.refreshModalClose = true;
     }
 
-    containsModalInterface() {
-        // main or chat is open
-        return (this.modalState & 1) !== 0 || (this.modalState & 2) !== 0;
+    hasQueuedScript() {
+        return this.queue.head() !== null || this.engineQueue.head() !== null || this.weakQueue.head() !== null;
+    }
+
+    hasModal() {
+        return this.modalMain !== -1 || this.modalChat !== -1 || this.modalSide !== -1;
     }
 
     busy() {
-        return this.delayed || this.containsModalInterface();
-    }
-
-    canAccess() {
-        if (World.shutdown) {
-            // once the world has gone past shutting down, no protection rules apply
-            return true;
-        } else {
-            return !this.protect && !this.busy();
-        }
+        return this.activeScript !== null || this.hasModal();
     }
 
     /**
@@ -708,7 +690,7 @@ export default class Player extends PathingEntity {
             }
 
             const delay = request.delay--;
-            if (this.canAccess() && delay <= 0) {
+            if (!this.busy() && delay <= 0) {
                 request.unlink();
 
                 const save = this.queue.cursor; // LinkList-specific behavior so we can getqueue/clearqueue inside of this
@@ -724,7 +706,7 @@ export default class Player extends PathingEntity {
     processWeakQueue() {
         for (let request = this.weakQueue.head(); request !== null; request = this.weakQueue.next()) {
             const delay = request.delay--;
-            if (this.canAccess() && delay <= 0) {
+            if (!this.busy() && delay <= 0) {
                 request.unlink();
 
                 const save = this.queue.cursor; // LinkList-specific behavior so we can getqueue/clearqueue inside of this
@@ -762,7 +744,7 @@ export default class Player extends PathingEntity {
 
             // only execute if it's time and able
             // soft timers can execute while busy, normal cannot
-            if (--timer.clock <= 0 && (timer.type === PlayerTimerType.SOFT || this.canAccess())) {
+            if (--timer.clock <= 0 && (timer.type === PlayerTimerType.SOFT || !this.busy())) {
                 // set clock back to interval
                 timer.clock = timer.interval;
 
@@ -840,18 +822,18 @@ export default class Player extends PathingEntity {
     // we process walktriggers from regular movement in client input, 
     // and for each interaction.
     processWalktrigger() {
-        if (this.walktrigger !== -1 && (!this.protect && !this.delayed)) {
+        if (this.walktrigger !== -1 && !this.busy()) {
             const trigger = ScriptProvider.get(this.walktrigger);
             this.walktrigger = -1;
             if (trigger) {
                 const script = ScriptRunner.init(trigger, this);
-                this.runScript(script, true);
+                this.executeScript(script, true);
             }
         }
     }
 
     processInteraction() {
-        if (this.target === null || !this.canAccess()) {
+        if (this.target === null || this.busy()) {
             this.updateMovement(false);
             return;
         }
@@ -862,7 +844,7 @@ export default class Player extends PathingEntity {
             return;
         }
 
-        if (this.target instanceof Npc && (typeof World.getNpc(this.target.nid) === 'undefined' || this.target.delayed)) {
+        if (this.target instanceof Npc && (typeof World.getNpc(this.target.nid) === 'undefined' || this.target.delayed())) {
             this.clearInteraction();
             this.unsetMapFlag();
             return;
@@ -1662,50 +1644,34 @@ export default class Player extends PathingEntity {
         }
     }
 
+    openMainModalSide(top: number, side: number) {
+        this.closeModal();
+        this.modalMain = top;
+        this.modalSide = side;
+        this.refreshModal = true;
+    }
+
     openMainModal(com: number) {
-        if ((this.modalState & 2) !== 0) {
-            // close chat modal if we're opening a new main modal
-            this.write(new IfClose());
-            this.modalState &= ~2;
-            this.modalChat = -1;
-        }
-
-        if ((this.modalState & 4) !== 0) {
-            // close side modal if we're opening a new main modal
-            this.write(new IfClose());
-            this.modalState &= ~4;
-            this.modalSide = -1;
-        }
-
-        this.modalState |= 1;
+        this.closeModal();
         this.modalMain = com;
         this.refreshModal = true;
     }
 
     openChat(com: number) {
-        this.modalState |= 2;
+        this.closeModal();
         this.modalChat = com;
         this.refreshModal = true;
     }
 
     openSideModal(com: number) {
-        this.modalState |= 4;
+        this.closeModal();
         this.modalSide = com;
         this.refreshModal = true;
     }
 
     openTutorial(com: number) {
         this.write(new TutOpen(com));
-        this.modalState |= 8;
         this.modalTutorial = com;
-    }
-
-    openMainModalSide(top: number, side: number) {
-        this.modalState |= 1;
-        this.modalMain = top;
-        this.modalState |= 4;
-        this.modalSide = side;
-        this.refreshModal = true;
     }
 
     exactMove(startX: number, startZ: number, endX: number, endZ: number, startCycle: number, endCycle: number, direction: number) {
@@ -1778,63 +1744,11 @@ export default class Player extends PathingEntity {
 
     // ----
 
-    runScript(script: ScriptState, protect: boolean = false, force: boolean = false) {
-        if (!force && protect && (this.protect || this.delayed)) {
-            // can't get protected access, bye-bye
-            // printDebug('No protected access:', script.script.name, protect, this.protect);
-            return -1;
-        }
-
+    executeScript(script: ScriptState, protect: boolean) {
         if (protect) {
             script.pointerAdd(ScriptPointer.ProtectedActivePlayer);
-            this.protect = true;
         }
-
-        const state = ScriptRunner.execute(script);
-
-        if (protect) {
-            this.protect = false;
-        }
-
-        if (script.pointerGet(ScriptPointer.ProtectedActivePlayer) && script._activePlayer) {
-            script.pointerRemove(ScriptPointer.ProtectedActivePlayer);
-            script._activePlayer.protect = false;
-        }
-
-        if (script.pointerGet(ScriptPointer.ProtectedActivePlayer2) && script._activePlayer2) {
-            script.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
-            script._activePlayer2.protect = false;
-        }
-
-        return state;
-    }
-
-    executeScript(script: ScriptState, protect: boolean = false, force: boolean = false) {
-        // printDebug('Executing', script.script.name);
-
-        const state = this.runScript(script, protect, force);
-        if (state === -1) {
-            // printDebug('Script did not run', script.script.name, protect, this.protect);
-            return;
-        }
-
-        if (state !== ScriptState.FINISHED && state !== ScriptState.ABORTED) {
-            if (state === ScriptState.WORLD_SUSPENDED) {
-                World.enqueueScript(script, script.popInt());
-            } else if (state === ScriptState.NPC_SUSPENDED) {
-                script.activeNpc.activeScript = script;
-            } else {
-                script.activePlayer.activeScript = script;
-                script.activePlayer.protect = protect; // preserve protected access when delayed
-            }
-        } else if (script === this.activeScript) {
-            this.activeScript = null;
-
-            if ((this.modalState & 1) === 0) {
-                // close chat dialogues automatically and leave main modals alone
-                this.closeModal();
-            }
-        }
+        ScriptRunner.execute(script);
     }
 
     wrappedMessageGame(mes: string) {

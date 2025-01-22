@@ -30,11 +30,9 @@ export default class ScriptState {
     static readonly ABORTED = -1;
     static readonly RUNNING = 0;
     static readonly FINISHED = 1;
-    static readonly SUSPENDED = 2; // suspended to move to player
+    static readonly DELAYED = 2;
     static readonly PAUSEBUTTON = 3;
     static readonly COUNTDIALOG = 4;
-    static readonly NPC_SUSPENDED = 5; // suspended to move to npc
-    static readonly WORLD_SUSPENDED = 6; // suspended to move to world
 
     // interpreter
     script: ScriptFile;

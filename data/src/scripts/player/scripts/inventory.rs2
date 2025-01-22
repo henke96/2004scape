@@ -1,3 +1,9 @@
 [inv_buttond,inventory:inv]
 if_close;
-inv_movetoslot(inv, inv, last_slot, last_targetslot);
+if (p_finduid(uid) = true) {
+    inv_movetoslot(inv, inv, last_slot, last_targetslot);
+} else {
+    // todo: partial inv updates
+    // inv_resendslot(inv, last_slot);
+    // inv_resendslot(inv, last_targetslot);
+}

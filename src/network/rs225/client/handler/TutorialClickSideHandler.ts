@@ -13,6 +13,11 @@ export default class TutorialClickSideHandler extends MessageHandler<TutorialCli
             return false;
         }
 
+        player.clearPendingAction();
+        if (player.busy()) {
+            return false;
+        }
+
         const script = ScriptProvider.getByTriggerSpecific(ServerTriggerType.TUTORIAL, -1, -1);
         if (script) {
             player.executeScript(ScriptRunner.init(script, player), true);

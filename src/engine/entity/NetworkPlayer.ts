@@ -151,25 +151,23 @@ export class NetworkPlayer extends Player {
             return;
         }
 
-        if (this.modalMain !== this.lastModalMain || this.modalChat !== this.lastModalChat || this.modalSide !== this.lastModalSide || this.refreshModalClose) {
-            if (this.refreshModalClose) {
+        if (this.modalMain !== this.lastModalMain || this.modalChat !== this.lastModalChat || this.modalSide !== this.lastModalSide) {
+            if (!this.hasModal()) {
                 this.write(new IfClose());
             }
-            this.refreshModalClose = false;
-
             this.lastModalMain = this.modalMain;
             this.lastModalChat = this.modalChat;
             this.lastModalSide = this.modalSide;
         }
 
         if (this.refreshModal) {
-            if ((this.modalState & 1) !== 0 && (this.modalState & 4) !== 0) {
+            if (this.modalMain !== -1 && this.modalSide !== -1) {
                 this.write(new IfOpenMainSide(this.modalMain, this.modalSide));
-            } else if ((this.modalState & 1) !== 0) {
+            } else if (this.modalMain !== -1) {
                 this.write(new IfOpenMain(this.modalMain));
-            } else if ((this.modalState & 2) !== 0) {
+            } else if (this.modalChat !== -1) {
                 this.write(new IfOpenChat(this.modalChat));
-            } else if ((this.modalState & 4) !== 0) {
+            } else if (this.modalSide !== -1) {
                 this.write(new IfOpenSide(this.modalSide));
             }
 
