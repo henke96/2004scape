@@ -187,7 +187,7 @@ export default class ClientCheatHandler extends MessageHandler<ClientCheat> {
 
                 player.closeModal();
 
-                if (!player.canAccess()) {
+                if (player.busy()) {
                     player.messageGame('Please finish what you are doing first.');
                     return false;
                 }
@@ -225,7 +225,7 @@ export default class ClientCheatHandler extends MessageHandler<ClientCheat> {
 
                 player.closeModal();
 
-                if (!player.canAccess()) {
+                if (player.busy()) {
                     player.messageGame('Please finish what you are doing first.');
                     return false;
                 }
@@ -248,7 +248,7 @@ export default class ClientCheatHandler extends MessageHandler<ClientCheat> {
 
                 other.closeModal();
 
-                if (!other.canAccess()) {
+                if (other.busy()) {
                     player.messageGame(`${args[0]} is busy right now.`);
                     return false;
                 }
@@ -272,7 +272,7 @@ export default class ClientCheatHandler extends MessageHandler<ClientCheat> {
                 if (varp.protect) {
                     player.closeModal();
 
-                    if (!player.canAccess()) {
+                    if (player.busy()) {
                         player.messageGame('Please finish what you are doing first.');
                         return false;
                     }
@@ -304,7 +304,7 @@ export default class ClientCheatHandler extends MessageHandler<ClientCheat> {
                 if (varp.protect) {
                     other.closeModal();
 
-                    if (!other.canAccess()) {
+                    if (other.busy()) {
                         player.messageGame(`${args[0]} is busy right now.`);
                         return false;
                     }

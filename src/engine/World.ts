@@ -554,21 +554,10 @@ class World {
 
             const script: ScriptState = request.script;
             try {
-                const state: number = ScriptRunner.execute(script);
-
                 // remove from queue no matter what, re-adds if necessary
                 request.unlink();
 
-                if (state === ScriptState.SUSPENDED) {
-                    // suspend to player (probably not needed)
-                    script.activePlayer.activeScript = script;
-                } else if (state === ScriptState.NPC_SUSPENDED) {
-                    // suspend to npc (probably not needed)
-                    script.activeNpc.activeScript = script;
-                } else if (state === ScriptState.WORLD_SUSPENDED) {
-                    // suspend to world again
-                    this.enqueueScript(script, script.popInt());
-                }
+                ScriptRunner.execute(script);
             } catch (err) {
                 console.error(err);
             }
@@ -585,7 +574,7 @@ class World {
                 const type = NpcType.get(npc.type);
                 const script = ScriptProvider.getByTrigger(ServerTriggerType.AI_SPAWN, type.id, type.category);
                 if (script) {
-                    npc.executeScript(ScriptRunner.init(script, npc));
+                    ScriptRunner.execute(ScriptRunner.init(script, npc));
                 }
             }
             if (npc.delayed) {
@@ -694,8 +683,10 @@ class World {
                     if (npc.delayed && this.currentTick >= npc.delayedUntil) npc.delayed = false;
 
                     // - resume suspended script
-                    if (!npc.delayed && npc.activeScript && npc.activeScript.execution === ScriptState.NPC_SUSPENDED) {
-                        npc.executeScript(npc.activeScript);
+                    if (!npc.delayed && npc.activeScript && npc.activeScript.execution === ScriptState.SUSPENDED) {
+                        const activeScript = npc.activeScript;
+                        npc.activeScript = null;
+                        ScriptRunner.execute(activeScript);
                     }
                 }
 
@@ -776,7 +767,9 @@ class World {
 
                 // - resume suspended script
                 if (!player.delayed && player.activeScript && player.activeScript.execution === ScriptState.SUSPENDED) {
-                    player.executeScript(player.activeScript, true, true);
+                    const activeScript = player.activeScript;
+                    player.activeScript = null;
+                    ScriptRunner.execute(activeScript);
                 }
 
                 // - primary queue
@@ -821,7 +814,7 @@ class World {
 
             player.closeModal();
 
-            if (player.queue.head() === null) {
+            if (!player.busy() && !player.hasQueuedScript()) {
                 const script = ScriptProvider.getByTriggerSpecific(ServerTriggerType.LOGOUT, -1, -1);
                 if (!script) {
                     printError('LOGOUT TRIGGER IS BROKEN!');

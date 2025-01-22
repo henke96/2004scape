@@ -53,6 +53,11 @@ export default class OpHeldUHandler extends MessageHandler<OpHeldU> {
             }
         }
 
+        player.clearPendingAction();
+        if (player.busy()) {
+            return false;
+        }
+
         player.lastItem = item;
         player.lastSlot = slot;
         player.lastUseItem = useItem;
@@ -61,7 +66,6 @@ export default class OpHeldUHandler extends MessageHandler<OpHeldU> {
         const objType = ObjType.get(player.lastItem);
         const useObjType = ObjType.get(player.lastUseItem);
 
-        player.clearPendingAction();
         player.faceEntity = -1;
         player.masks |= player.entitymask;
 

@@ -88,7 +88,7 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        if (!player || !player.canAccess()) {
+        if (!player || player.busy()) {
             state.pushInt(0);
             return;
         }
@@ -328,11 +328,13 @@ const PlayerOps: CommandHandlers = {
 
         state.activePlayer.delayed = true;
         state.activePlayer.delayedUntil = World.currentTick + 1;
+        state.activePlayer.activeScript = state;
         state.execution = ScriptState.SUSPENDED;
     }),
 
     [ScriptOpcode.P_COUNTDIALOG]: checkedHandler(ProtectedActivePlayer, state => {
         state.activePlayer.write(new PCountDialog());
+        state.activePlayer.activeScript = state;
         state.execution = ScriptState.COUNTDIALOG;
     }),
 
@@ -341,6 +343,7 @@ const PlayerOps: CommandHandlers = {
     [ScriptOpcode.P_DELAY]: checkedHandler(ProtectedActivePlayer, state => {
         state.activePlayer.delayed = true;
         state.activePlayer.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
+        state.activePlayer.activeScript = state;
         state.execution = ScriptState.SUSPENDED;
     }),
 
@@ -385,6 +388,7 @@ const PlayerOps: CommandHandlers = {
 
     // https://x.com/JagexAsh/status/1389465615631519744
     [ScriptOpcode.P_PAUSEBUTTON]: checkedHandler(ProtectedActivePlayer, state => {
+        state.activePlayer.activeScript = state;
         state.execution = ScriptState.PAUSEBUTTON;
     }),
 

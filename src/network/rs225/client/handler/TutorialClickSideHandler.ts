@@ -8,8 +8,12 @@ import ScriptRunner from '#/engine/script/ScriptRunner.js';
 export default class TutorialClickSideHandler extends MessageHandler<TutorialClickSide> {
     handle(message: TutorialClickSide, player: Player): boolean {
         const { tab } = message;
-
         if (tab < 0 || tab > 13) {
+            return false;
+        }
+
+        player.clearPendingAction();
+        if (player.busy()) {
             return false;
         }
 
