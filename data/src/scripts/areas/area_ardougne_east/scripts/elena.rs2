@@ -65,12 +65,10 @@ switch_int(%biohazard_progress) { // ^biohazard_used_birdfeed intentionally has 
         ~chatplayer("<p,neutral>Those look pretty fancy.");
         ~chatnpc("<p,neutral>Well, yes and no. The liquid honey isn't worth much, but the others are. Especially this colourless ethenea. Be careful with the sulphuric broline, it's highly poisonous.");
         ~chatplayer("<p,neutral>You're not kidding, I can smell it from here!");
-        if_close;
         p_delay(2);
         mes("Elena puts the agents through the distillator.");
         ~chatnpc("<p,confused>I don't understand... the touch paper hasn't changed colour at all...");
         ~chatnpc("<p,neutral>You'll need to go and see my old mentor Guidor. He lives in Varrock. Take these vials and this sample to him.");
-        if_close;
         %biohazard_progress = ^biohazard_given_distillator;
         // doesn't drop to the ground? https://youtu.be/_ZNalEQB70o?si=qmcyRDUWvO1M4tA5&t=637
         inv_del(inv, distillator, 1);

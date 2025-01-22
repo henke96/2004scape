@@ -53,7 +53,6 @@ switch_int (%scorpcatcher_progress) {
 
 [label,seer_looking_glass]
 ~chatnpc("<p,neutral>Let me look into my looking glass.");
-if_close;
 mes("The seer produces a small mirror");
 p_delay(3);
 mes("The seer gazes into the mirror");

@@ -13,7 +13,6 @@ if(~check_axis(coord, loc_coord, loc_angle) = false) {
     }
     if(%biohazard_progress >= ^biohazard_given_distillator & %biohazard_progress < ^biohazard_found_secret & npc_find(coord, npc_368, 2, 0) = true) { // shouldn't ever fail...
         ~chatnpc("<p,neutral>Halt. I need to conduct a search on you. There have been reports of someone bringing a virus into Varrock.");
-        if_close;
         mes("The guard searches you.");
         p_delay(3);
         if(inv_total(inv, Ethenea) > 0) {
@@ -32,7 +31,6 @@ if(~check_axis(coord, loc_coord, loc_angle) = false) {
             p_delay(3);
         }
         ~chatnpc("<p,neutral>You may now pass.");
-        if_close;
         ~forcemove(0_50_53_63_13); // only does this here for some reason
         p_delay(0);
         p_teleport(movecoord(coord, 1, 0, 0));

@@ -71,7 +71,6 @@ if ($option = 1) {
 }
 
 [label,demon_slayer_wrong_incantation]
-if_close;
 mes("As you chant, Delrith is sucked towards the vortex.");
 p_delay(1);
 mes("Suddenly, the vortex closes!");
@@ -90,7 +89,6 @@ mes("That was the wrong incantation");
 
 [label,demon_slayer_correct_incantation]
 ~mesbox("As you chant, Delrith is sucked towards the vortex...|Back to the dark dimension from which he came...");
-if_close;
 
 if (npc_find(coord, weakened_delrith, 8, 0) = true) {
     gosub(npc_death);

@@ -127,7 +127,6 @@ if($fail = 0) {
     %desertrescue_map_mechanisms = setbit_range_toint(%desertrescue_map_mechanisms, add($attempts, 1), ^desertrescue_lock_attempts1, ^desertrescue_lock_attempts2);
     mes("You fail!");
     if(.npc_find(coord, npc_828, 10, 0) = true | .npc_find(coord, npc_829, 10, 0) = true) {
-        if_close;
         mes("A nearby guard spots you!");
         p_delay(3);
         npc_say("Oh oh!");

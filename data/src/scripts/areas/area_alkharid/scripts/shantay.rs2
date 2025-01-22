@@ -30,7 +30,6 @@ if ($choice = 1) {
     ~chatplayer("<p,neutral>I am definitely an outlaw, prepare to die!");
     ~chatnpc("<p,neutral>Ha, very funny.....");
     ~chatnpc("<p,neutral>Guards arrest <text_gender("him", "her")>!");
-    if_close;
     mes("The guards arrest you and place you in the jail.");
     p_delay(2);
     %shantay_jail_progress = ^put_in_shantay_jail;
@@ -54,7 +53,6 @@ if ($choice = 3) {
 
 [label,shantay_pay_for_desert]
 ~chatplayer("<p,neutral>Why do I have to pay to go into the desert?");
-if_close;
 mes("Shantay opens his arms wide as if to embrace you.");
 p_delay(3);
 

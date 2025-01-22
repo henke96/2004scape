@@ -131,7 +131,6 @@ if(npc_find(coord, npc_828, 7, 0) = true) {
     switch_int($cur_stage) {
         case 0 :
             ~mesbox("A guard approaches you and pretends to start hitting you.");
-            if_close;
             p_delay(2);
             ~chatnpc("<p,neutral>Take that you infidel!");
             ~mesbox("The guard leans closer to you and says in a low voice.");
@@ -150,7 +149,6 @@ if(npc_find(coord, npc_828, 7, 0) = true) {
             ~objbox(bronze_scimitar, "The guard half draws his fearsome looking scimitar.", 250, 0, 0);
             ~chatnpc("<p,happy>And we'll be pleased to clean the mess up after you've been dispatched.");
         case 3 :
-            if_close;
             mes("An angry guard approaches you and whips out his sword.");
             p_delay(2);
             npc_say("Okay, that does it!");

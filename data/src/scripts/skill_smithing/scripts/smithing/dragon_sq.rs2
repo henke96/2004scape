@@ -34,7 +34,6 @@ if (inv_total(inv, hammer) < 1) {
 }
 // display message
 ~mesbox("You set to work trying to fix the ancient shield. It's seen some heavy action and needs some serious work doing to it.");
-if_close; // have to close for some reason
 // play anim and sound
 anim(human_smithing, 0);
 sound_synth(anvil_4, 0, 0);

@@ -21,7 +21,6 @@ if(inv_total(inv, broken_iban_staff) > 0) {
                 ~chatplayer("<p,sad>Oops! I'm a bit short."); // guessed mesanim
                 return;
             }
-            if_close;
             inv_del(inv, coins, 200000);
             inv_del(inv, broken_iban_staff, 1);
             mes("You give the mage 200,000 coins and the staff.");

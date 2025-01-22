@@ -33,14 +33,12 @@ switch_int(~p_choice2("No, I'm going to stay a while.", 1, "Okay, let's go back.
 ~board_fishing_platform_to_ardougne;
 
 [proc,board_fishing_platform_to_island]
-if_close;
 mes("You board the row boat.");
 p_delay(2);
 p_telejump(^seaslug_island_coord);
 ~mesbox("You arrive on a small island.");
 
 [proc,board_fishing_platform_to_ardougne]
-if_close;
 mes("You board the small row boat.");
 p_delay(2);
 p_telejump(^seaslug_shore_coord);

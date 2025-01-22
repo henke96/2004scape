@@ -19,7 +19,6 @@ switch_int(%arena_progress) {
     case ^arena_freed_servils, ^arena_complete, ^arena_complete_defeated_genkhazard :
         ~chatplayer("<p,happy>Hi.");
         ~chatnpc("<p,shock>You're the fiend who killed Bouncer.");
-        if_close;
         npc_say("En garde fiend!");
         ~npc_retaliate(0);
     case default :
@@ -131,12 +130,10 @@ inv_add(inv, khazard_cell_keys, 1);
 
 [label,khazard_guard_killed_bouncer]
 ~chatnpc("<p,angry>You're the one who killed Bouncer.");
-if_close;
 npc_say("Die traitor!");
 ~npc_retaliate(0);
 
 [label,khazard_guard_generals_pet]
 ~chatnpc("<p,shock>You're him. The one who murdered the General's pet.");
-if_close;
 ~npc_retaliate(0);
 npc_say("You'll pay for that mistake!");

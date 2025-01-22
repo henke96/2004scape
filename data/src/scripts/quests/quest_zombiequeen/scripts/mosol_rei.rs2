@@ -136,7 +136,6 @@ inv_add(inv, wampum_belt, 1);
 [label,mosol_danger]
 ~chatplayer("<p,happy>What danger is there around here?");
 ~chatnpc("<p,neutral>Can you not see Bwana? This whole area is infested with the living dead.");
-if_close;
 npc_say("Arrggghhh, here are some now!");
 mes("Mosol Rei: Arrggghhh, here are some now!");
 def_int $i = 0;

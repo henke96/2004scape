@@ -58,7 +58,6 @@ switch_int(%arena_progress) {
 ~chatplayer("<p,happy>Jeremy look, I have the keys.");
 ~chatnpc("<p,happy>Wow! Please set me free, then we can find my dad. I overheard a guard talking. I think they've taken him to the arena.");
 ~chatplayer("<p,neutral>Ok, we'd better hurry.");
-if_close;
 def_coord $move_to = 0_40_49_56_31;
 def_int $delay = distance(coord, $move_to);
 if(loc_find(movecoord($move_to, 1, 0, 0), loc_80) = false) {
@@ -91,7 +90,6 @@ npc_del;
 @arena_enter;
 
 [label,ogre_attack_justin]
-if_close;
 def_coord $ogre_to = 0_40_49_46_29;
 if (npc_find(movecoord(coord, 0, 0, 8), khazard_ogre, 14, 0) = true) {
     if(npc_getmode = none) { // npc in cutscene already, do nothing

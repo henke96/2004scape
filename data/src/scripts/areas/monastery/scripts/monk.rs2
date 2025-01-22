@@ -22,7 +22,6 @@ npc_anim(human_castheal,0);
 [label,monk_heal_player]
 ~chatplayer("<p,quiz>Can you heal me? I'm injured.");
 ~chatnpc("<p,neutral>Ok.");
-if_close;
 sound_synth(heal, 0, 0);
 spotanim_pl(heal_casting, 120, 0);
 npc_anim(human_castheal, 0);

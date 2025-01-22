@@ -8,7 +8,6 @@
 ~chatplayer("<p,neutral>That's right, you get going. I'll catch up.");
 ~chatnpc("<p,happy>Thanks again, brave adventurer.");
 
-if_close;
 p_delay(0);
 mes("The dwarf child runs off into the caverns.");
 if (%mcannon_progress = ^mcannon_tasked_with_finding_gilobs_son) {

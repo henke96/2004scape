@@ -63,7 +63,6 @@ if(inv_total(inv, coins) < 5000) {
     ~chatnpc("<p,neutral>Sorry, I can't sell them any cheaper than that.");
     return;
 }
-if_close;
 inv_del(inv, coins, 5000);
 inv_add(inv, klanks_gauntlets, 1);
 mes("You give Klank 5000 coins...");

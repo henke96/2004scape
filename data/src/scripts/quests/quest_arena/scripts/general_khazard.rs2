@@ -7,7 +7,6 @@ switch_int(%arena_progress) {
     case ^arena_freed_servils :
         ~chatplayer("<p,neutral>Hello.");
         ~chatnpc("<p,genkhazard>You killed my pet, and yet still you dare to speak to me?");
-        if_close;
         ~npc_retaliate(0);
         npc_say("You shall die for your insolence.");
     case ^arena_sent_jail, ^arena_defeated_scorpion :
@@ -47,7 +46,6 @@ if(npc_find(coord, general_khazard, 23, 0) = false) {
 ~chatnpc("<p,genkhazard>I'll let them go, but you must stay and|fight for me. You'll make me double the|gold if you manage to last a few fights.");
 // https://youtu.be/nptASzjG_Xk?si=e5G8rcOt_AvKLmkI&t=258 (not gendered, wiki mentions this as well but extra confirmation anyways)
 ~chatnpc("<p,genkhazard>Guards! Take him to the cells.");
-if_close;
 %arena_progress = ^arena_sent_jail;
 p_teleport(0_40_49_45_5);
 cam_reset;

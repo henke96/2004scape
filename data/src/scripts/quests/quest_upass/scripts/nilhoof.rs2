@@ -10,7 +10,6 @@ switch_int(%upass_progress) {
         ~chatplayer("<p,neutral>But how?");
         ~chatnpc("<p,neutral>If I knew, I would have slain him already. Seek out the Witch, his guide, his only confidante. Only she knows how to rid us of Iban.");
         ~chatnpc("<p,neutral>She lives on the platforms above, we dare not go there. Here, take some food to aid your journey.");
-        if_close;
         // todo: should this be nilhoof or niloof?
         mes("<nc_name(nilhoof)> gives you some food...");
         inv_add(inv, meat_pie, 2);

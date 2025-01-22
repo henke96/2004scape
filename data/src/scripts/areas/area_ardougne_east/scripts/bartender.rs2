@@ -37,7 +37,6 @@ if(inv_total(inv, coins) < 8) {
     ~chatplayer("<p,sad>Sorry, I don't have 8 coins.");
     return;
 }  
-if_close;
 inv_del(inv, coins, 8);
 mes("The bartender hands you a shot of Heart Stopper.");
 p_delay(2);
