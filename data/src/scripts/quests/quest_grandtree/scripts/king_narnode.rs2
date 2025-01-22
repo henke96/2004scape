@@ -45,15 +45,12 @@ switch_int(%grandtree_progress) {
         ~chatnpc("<p,shock>What?! Glough?! With a demon?!");
         ~chatplayer("<p,angry>Glough has a store of Daconia rocks further up the passage! He's been accessing the roots from a secret passage at his home.");
         ~chatnpc("<p,angry>Never! Not Glough! He's a good gnome at heart!");
-        if_close;
         p_delay(0); // 1t
         ~chatnpc("<p,angry>Guard!");
-        if_close;
         p_delay(6); // 7t
         if(.npc_find(coord, gnome_guard_halberd, 8, 0) = true) { // not sure about the dist
             ~.chatnpc("<p,neutral>Sire!");
             ~chatnpc("<p,neutral>Go and check out that passage!");
-            if_close;
             p_delay(4); // 5t
             ~.chatnpc("<p,angry>We found Glough hiding under a horde of Daconia rocks!");
             ~chatplayer("<p,laugh>That's what I've been trying to tell you!|Glough's been fooling you!");
@@ -201,7 +198,6 @@ switch_int(%grandtree_progress) {
                 ~chatplayer("<p,neutral>Of course sire.");
                 npc_setmode(none);
                 ~chatnpcnoturn("<p,shifty>Not here, follow me.");
-                if_close;
                 def_int $npc_dist = ~total_distance(npc_coord, ^narnode_trapdoor_coord);
                 npc_walk(^narnode_trapdoor_coord);
                 if($npc_dist > 0) {
@@ -238,7 +234,6 @@ switch_int(%grandtree_progress) {
 [label,king_narnode_back_up]
 npc_setmode(none);
 ~chatnpcnoturn("<p,neutral>I'll show you the way back up.");
-if_close;
 def_coord $up_coord = movecoord(^narnode_trapdoor_coord, 0, 0, 6400);
 def_int $npc_dist = ~total_distance(npc_coord, $up_coord);
 npc_walk($up_coord);

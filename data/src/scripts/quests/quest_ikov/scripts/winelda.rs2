@@ -40,7 +40,6 @@ switch_int (%ikov_progress) {
 }
 
 [label,winelda_teleport]
-if_close;
 spotanim_npc(teleport_casting, 92, 0);
 cam_moveto(0_41_154_35_24, 1500, 100, 232);
 cam_lookat(coord, 50, 100, 232);

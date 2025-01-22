@@ -19,7 +19,6 @@ if (%warning_wilderness_teleport_lever = ^false) {
 anim(human_leverdown, 0); // OSRS uses seq's not in 225, going to assume here
 sound_synth(lever, 0, 0);
 loc_change(loc_161, 6);
-if_close;
 p_delay(1);
 mes("You pull the lever...");
 p_delay(0);
@@ -34,7 +33,6 @@ p_arrivedelay;
 anim(human_leverdown, 0); // OSRS uses seq's not in 225, going to assume here
 sound_synth(lever, 0, 0);
 loc_change(loc_161, 6);
-if_close;
 p_delay(0);
 mes("You pull the lever...");
 p_delay(0);

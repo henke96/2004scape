@@ -32,7 +32,6 @@ if(inv_total(inv, scorpion_cage_empty) > 0) {
     ~chatnpc("<p,neutral>Well you have the scorpion cage I gave you,|you can catch them using that.");
 } else {
     ~chatnpc("<p,neutral>Well I have a scorpion cage here|which you can use to catch them in.");
-    if_close;
     inv_add(inv, scorpion_cage_empty, 1);
     mes("Thormac gives you a cage.");
     p_delay(4); // RSC has this as 3 ticks, based off this it's prob 5 here: https://youtu.be/wpCnoBA5d1w?si=p4viTMMFsviVo5Gx&t=46

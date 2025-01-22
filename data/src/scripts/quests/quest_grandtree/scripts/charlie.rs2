@@ -65,13 +65,11 @@ switch_int(%grandtree_progress) {
 if(coord ! ^grandtree_jail_coord) {
     return;
 }
-if_close;
 npc_add(movecoord(^grandtree_jail_coord, 3, 0, 0), king_narnode, 200);
 p_delay(0); 
 npc_walk(movecoord(coord, 1, 0, 0));
 p_delay(3); // todo: +1 until delay is fixed
 ~chatnpc("<p,sad>Traveller please accept my apologies!|Glough had no right to arrest you!|I just think he's scared of humans.|Let me get you out of there.");
-if_close;
 // can't use door proc here since it opens incorrectly (notice the lock side)
 if(loc_find(movecoord(coord, 1, 0, 0), loc_3367) = true) {
     loc_del(6);

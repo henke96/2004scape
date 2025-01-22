@@ -49,7 +49,6 @@ switch_int (%fluffs_progress) {
         ~chatnpc("<p,neutral>I would sell it to my cousin in West Ardougne.|I hear there's a rat epidemic there.|But it's too far.");
         ~chatnpc("<p,happy>Here you go, look after her and thank you again!");
         ~mesbox("Gertrude hands you a kitten.");
-        if_close;
         ~gertrude_give_cat;
         p_delay(3);
         mes("... and some food!");

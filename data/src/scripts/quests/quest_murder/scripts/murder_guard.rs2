@@ -95,7 +95,6 @@ switch_int(~p_choice4("It was an intruder!", 1, "The butler did it!", 2, "It was
 [label,murder_guard_butler]
 ~chatplayer("<p,happy>The butler did it!");
 ~chatnpc("<p,confused>I hope you have proof to that effect. We have to arrest someone for this and it seems to me that only the actual murderer would gain by falsely accusing someone.");
-if_close;
 p_delay(3);
 ~chatnpc("<p,neutral>Although having said that the butler is kind of shifty looking...");
 

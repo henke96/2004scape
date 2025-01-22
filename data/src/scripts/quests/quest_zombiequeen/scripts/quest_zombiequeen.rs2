@@ -20,7 +20,6 @@ switch_int(~p_choice2("Yes, I am very nimble and agile!", 1, "No, I am happy whe
         mes("...to the other and climb down again.");
         p_telejump(movecoord(loc_coord, -1, 0, 1));
     case 2 :
-        if_close;
         mes("You think better of clambering over the cart, you might get dirty.");
         p_delay(2);
         say("I'd probably have just scraped my knees up as well.");
@@ -46,7 +45,6 @@ if(coordx(coord) < coordx(loc_coord)) {
 ~mesbox("The gate feels very cold to your touch! Are you sure you want to go through?");
 switch_int(~p_choice2("Yes, I am very nimble and agile!", 1, "No, actually, I have a bad feeling about this!", 2)) {
     case 1 :
-        if_close;
         mes("The gates slowly begin to open...");
         p_delay(1); // 1t
         mes("Suddenly some Zombies grab you and start dragging you inside!");
@@ -54,7 +52,6 @@ switch_int(~p_choice2("Yes, I am very nimble and agile!", 1, "No, actually, I ha
         ~shilo_metalgates_open;
         ~forcemove(0_44_46_54_9);
     case 2 :
-        if_close;
         mes("You drag your quivering body away from the gates.");
         p_delay(2); // 2t
         mes("You look around, but you don't think anyone saw you.");
@@ -384,7 +381,6 @@ if(%zombiequeen_progress = ^zombiequeen_lit_mound) {
     ~mesbox("It looks like there is a steep drop just after the fissure. It may be dangerous to try to climb down without any sort of support.");
     return;
 }
-if_close;
 p_delay(1); // TOOD: 1t
 if(stat(agility) < 32) {
     mes("You need a level 32 agility to attempt this.");
@@ -671,7 +667,6 @@ switch_int(~p_choice3("A ladder", 1, "A crude raft", 2, "A pole vault", 3)) {
             return;
         }
         ~mesbox("You see that this table already looks very sea worthy it takes virtually no time at all to help fix it into a crude raft.");
-        if_close;
         mes("You place it carefully on the water!");
         loc_add(0_45_146_17_29, loc_2227, 0, centrepiece_straight, 6);
         cam_shake(4, 0, 20, 5);
@@ -934,7 +929,6 @@ if(inzone(0_43_48_42_15, 0_43_48_46_18, coord) = true) {
     anim(human_pickupfloor, 0);
     p_delay(1);
     ~mesbox("You hear an unearthly moaning sound as you see an apparition materialise right in front of you.");
-    if_close;
     spotanim_map(small_smokepuff, $spawn_coord, 5, 0);
     p_delay(1); // 1t todo: adjust when delay fixed
     npc_add($spawn_coord, npc_501, 30);
@@ -954,7 +948,6 @@ if(inzone(0_43_48_42_15, 0_43_48_46_18, coord) = true) {
 ~mesbox("You see a huge waterfall blocking your path.  The path leads on through the cascading waterfall, but it looks quite dangerous. Would you like to try and follow the path?");
 switch_int(~p_choice2_header("Yes, I'll follow the path.", 1, "No, I'll look for another exit.", 2, "Follow the path?")) {
     case 1 :
-        if_close;
         // this is probably just the whole block copy pasted for both sides on OSRS
         // the messages even have multiple differences lol, just going to bascially do the same thing
         mes("You start carefully edging along the slippery path...");
@@ -1098,7 +1091,6 @@ if(last_useitem = rashiliya_corpse) {
     // can't find any way to get a 2nd corpse, not sure what the interaction is if the quest is already complete
     if(%zombiequeen_progress = ^zombiequeen_retrieved_corpse) {
         ~objbox(rashiliya_corpse, "You carefully place Rashiliyia's remains on the dolmen.|You feel a strange vibration in the air.", 250, 0, 0);
-        if_close;
         if(npc_find(coord, npc_506, 7, 0) = false) {
             def_coord $spawn_coord = map_findsquare(coord, 1, 1, ^map_findsquare_lineofwalk);
             spotanim_map(spotanim_184, $spawn_coord, 5, 0);
@@ -1502,7 +1494,6 @@ while (npc_huntnext = true) {
 queue(cr_queue, 10);
 cam_shake(0, 10, 0, 0);
 ~mesbox("You touch the dolmen, and the ground starts to shake. You hear an unearthly voice booming and you step away from the dolmen in anticipation.");
-if_close;
 // might be result of some movement proc, not sure
 if(coordx(coord) = 2893) p_teleport(movecoord(coord, -1, 0, 0));
 else if(coordz(coord) = 9488) p_teleport(movecoord(coord, 0, 0, -1));
@@ -1566,7 +1557,6 @@ if(%zombiequeen_progress = ^zombiequeen_unlocked_tombdoor) %zombiequeen_progress
 ~objbox(rashiliya_corpse, "The remains of Rashiliyia look quite delicate. You sense|that a spirit needs to be put to rest.|Are you sure that you want to drop the remains?", 250, 0, 0);
 switch_int(~p_choice2("Yes, I am sure.", 1, "No, I'll keep hold of the remains.", 2)) {
     case 1 :
-        if_close;
         anim(human_pickupfloor, 0);
         inv_del(inv, rashiliya_corpse, 1);
         def_coord $coord = map_findsquare(coord, 1, 1, ^map_findsquare_lineofwalk);

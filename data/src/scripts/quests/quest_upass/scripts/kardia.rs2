@@ -93,7 +93,6 @@ loc_change(loc_3273, 20);
 
 [label,search_kardia_chest]
 ~mesbox("You search the chest...");
-if_close;
 p_delay(2); // 3t
 if(%upass_progress >= ^upass_found_doll) {
     // rs3, not sure if this existed originally...
