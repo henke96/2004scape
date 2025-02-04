@@ -372,9 +372,10 @@ npc_setmode(opplayer2);
 
 queue(reset_itest, 10);
 
+def_player_uid $uid = uid;
 world_delay(2);
 
-if (p_finduid(uid) = true) {
+if (p_finduid($uid) = true) {
     p_walk(movecoord(coord, 5, 0, 0));
 }
 
@@ -384,9 +385,10 @@ npc_add(movecoord(coord, -5, 0, -1), dark_wizard_water, 15);
 ~npc_retaliate(0);
 queue(reset_itest, 15);
 
+def_player_uid $uid = uid;
 world_delay(2);
 
-if (p_finduid(uid) = true) {
+if (p_finduid($uid) = true) {
     p_walk(movecoord(coord, 5, 0, 0));
 }
 

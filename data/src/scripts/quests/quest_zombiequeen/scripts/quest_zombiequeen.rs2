@@ -1528,7 +1528,7 @@ if(testbit(%zq_map_mechanisms, ^zq_defeated_nazastarool1) = false) {
     npc_add($spawn_coord, npc_509, 500); // 500t osrs
     npc_say("Nazastarool returns with vengeance!");
     npc_setmode(playerface);
-    npc_delay(1); 
+    // todo: npc_delay(1); 
     %npc_aggressive_player = uid;
     npc_say("Soon you will serve Rashiliyia.");
     if(p_finduid(%npc_aggressive_player) = true) ~npc_retaliate(0);

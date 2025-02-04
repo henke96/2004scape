@@ -191,15 +191,20 @@ if (npc_param(defend_sound) ! null) {
 
 npc_heropoints($damage);
 p_opnpc(5);
+// todo
+def_player_uid $uid = uid;
+def_coord $arrow_drop_cord = npc_coord;
 if (random(5) ! 0) {
     world_delay(calc($delay / 30 - 2));
-    if (map_blocked(npc_coord) = false) {
-        if (p_finduid(uid) = true) {
-            inv_dropslot(ranged_quiver_inv, npc_coord, 0, 200);
+    if (map_blocked($arrow_drop_cord) = false) {
+        if (finduid($uid) = true) {
+            inv_dropslot(ranged_quiver_inv, $arrow_drop_cord, 0, 200);
         }
     }
 }
-inv_clear(ranged_quiver_inv);
+if (finduid($uid) = true) {
+    inv_clear(ranged_quiver_inv);
+}
 
 if (random(2) = 0) {
     // There's some randomness here, this is a guess

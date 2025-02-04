@@ -4,7 +4,7 @@
 
 [label,npc_gnomeball_tackle]
 npc_setmode(null);
-npc_delay(0);
+// todo: npc_delay(0);
 if_close;
 if (p_finduid(uid) = true) {
     if (stat_random(stat(agility), 30, 200) = false & inv_getobj(worn, ^wearpos_rhand) = gnomeball) { // 50% guess for now

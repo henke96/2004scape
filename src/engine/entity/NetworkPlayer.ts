@@ -31,7 +31,7 @@ import PlayerInfo from '#/network/server/model/PlayerInfo.js';
 import NpcInfo from '#/network/server/model/NpcInfo.js';
 import WorldStat from '#/engine/WorldStat.js';
 import SetMultiway from '#/network/server/model/SetMultiway.js';
-import { printError } from '#/util/Logger.js';
+import { printDebug, printError } from '#/util/Logger.js';
 import NpcRenderer from '#/engine/renderer/NpcRenderer.js';
 import PlayerRenderer from '#/engine/renderer/PlayerRenderer.js';
 import NullClientSocket from '#/server/NullClientSocket.js';
@@ -133,6 +133,7 @@ export class NetworkPlayer extends Player {
 
         if (decoder) {
             const message = decoder.decode(NetworkPlayer.inBuf, this.client.waiting);
+            printDebug('Got: ' + message.constructor.name);
             const success: boolean = ClientProtRepository.getHandler(packetType)?.handle(message, this) ?? false;
             // todo: move out of model
             if (success && message.category === ClientProtCategory.USER_EVENT) {

@@ -83,4 +83,4 @@ if (%tutorial_progress = ^survival_guide_build_fire) {
 def_int $delay = 150;
 loc_add($fire_coord, loc_2732, 1, centrepiece_straight, $delay);
 world_delay($delay);
-obj_add($fire_coord, ashes, 1, 100);
+obj_addall($fire_coord, ashes, 1, 100);

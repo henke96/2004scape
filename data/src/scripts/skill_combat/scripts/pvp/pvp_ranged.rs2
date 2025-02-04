@@ -70,6 +70,9 @@ if ($weapon = null) {
 if (%damagestyle = ^style_ranged_rapid) {
     %action_delay = sub(%action_delay, 1);
 }
+// todo
+def_player_uid $uid = uid;
+def_coord $arrow_drop_coord = .coord;
 def_int $random = random(5);
 if (~in_duel_arena(coord) = true) {
     if ($random = 0) {
@@ -77,13 +80,15 @@ if (~in_duel_arena(coord) = true) {
     }
 } else if ($random ! 0) {
     world_delay(calc($delay / 30 - 2));
-    if (map_blocked(.coord) = false) {
-        if (p_finduid(uid) = true & .p_finduid(.uid) = true) {
-            inv_dropslot(ranged_quiver_inv, .coord, 0, 200);
+    if (map_blocked($arrow_drop_coord) = false) {
+        if (finduid($uid) = true) {
+            inv_dropslot(ranged_quiver_inv, $arrow_drop_coord, 0, 200);
         }
     }
 }
-inv_clear(ranged_quiver_inv);
+if (finduid($uid) = true) {
+    inv_clear(ranged_quiver_inv);
+}
 
 
 [proc,pvp_ranged_use_weapon](obj $rhand, obj $ammo)(int)
