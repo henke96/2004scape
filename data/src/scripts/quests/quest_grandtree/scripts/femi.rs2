@@ -46,7 +46,6 @@ if(%grandtree_progress = ^grandtree_obtained_lumber_order) {
 mes("The little gnome is too busy to talk.");
 
 [label,femi_sneakin]
-if_close;
 bas_running(null);
 p_walk(0_38_52_29_51); // respects clipping from my testing
 p_delay(4); // 5t
@@ -80,7 +79,6 @@ switch_int(~p_choice2("Sorry, I'm a bit busy.", 1, "OK then.", 2)) {
     case 2 :
         ~chatplayer("<p,happy>OK then.");
         ~chatnpc("<p,happy>Thanks traveller!");
-        if_close;
         ~forcewalk2(0_38_52_29_52);
         p_delay(0);
         facesquare(movecoord(coord, -1, 0, 0));

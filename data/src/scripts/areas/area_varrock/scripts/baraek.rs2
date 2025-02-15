@@ -60,13 +60,11 @@ switch_int(~p_choice2("Yeah, Okay, here you go.", 1, "20 gold coins? That's an o
 ~chatplayer("<p,quiz>Would you like to buy my fur?");
 ~chatnpc("<p,neutral>Let's have a look at it.");
 ~objbox(bear_fur, "You hand Baraek your fur to look at.", 250, 0, 0);
-if_close;
 p_delay(3);
 ~chatnpc("<p,neutral>It's not in the best condition. I guess I could give you 12 coins for each one.");
 def_int $option = ~p_choice2("OK, here you go.", 1, "No thanks, I'll leave it.", 2);
 if($option = 1) {
     ~chatplayer("<p,neutral>Yeah, that'll do.");
-    if_close;
     while(inv_total(inv, bear_fur) > 0) {
         inv_del(inv, bear_fur, 1);
         inv_add(inv, coins, 12);
@@ -86,7 +84,6 @@ if($option = 1) {
 def_int $option = ~p_choice2("Yep, sounds fine.", 1, "No! I almost got my throat torn out by a wolf to get this!", 2);
 if($option = 1) {
     ~chatplayer("<p,happy>Yep, sounds fine.");
-    if_close;
     while(inv_total(inv, grey_wolf_fur) > 0) {
         inv_del(inv, grey_wolf_fur, 1);
         inv_add(inv, coins, 120);

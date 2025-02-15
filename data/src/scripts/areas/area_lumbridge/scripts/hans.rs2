@@ -23,7 +23,6 @@ if ($option = 1) {
 } else if ($option = 2) {
     ~chatplayer("<p,angry>I have come to kill everyone in this castle.");
     npc_setmode(playerescape);
-    if_close;
     p_delay(0);
     npc_say("HELP HELP!");
 } else if ($option = 3) {

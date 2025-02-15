@@ -64,7 +64,6 @@ if ($option = 1) {
 [label,demon_slayer_prysin_got_them]
 ~chatplayer("<p,happy>I've got all three keys!");
 ~chatnpc("<p,happy>Excellent! Now I can give you Silverlight.");
-if_close();
 mes("You give all three keys to Sir Prysin.");
 inv_del(inv, demon_traiborn_key, 1);
 inv_del(inv, demon_rovin_key, 1);

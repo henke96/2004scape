@@ -155,7 +155,6 @@ if (~inzone_coord_pair_table(sheepherder_in_pen, npc_coord) = true) {
         & inv_total(inv, $npc_bones) < 1) {
          %sheepherder_disposal = setbit_range_toint(%sheepherder_disposal, 2, $npc_start_bit, calc($npc_start_bit + 2));
         ~mesbox("You feed the poisoned food to the sheep.|It happily eats it all up.|You watch as the sheep collapses dead onto the floor.");
-        if_close;
         p_delay(0);
         npc_anim(npc_param(death_anim), 0);
         p_delay(2);

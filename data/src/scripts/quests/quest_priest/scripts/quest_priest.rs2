@@ -87,7 +87,6 @@ def_int $choice = ~p_choice2_header("Yes.", 1, "No.", 2, "Are you sure you want 
 if ($choice = 1) {
     inv_del(inv, ghost_skull, 1);
 }
-if_close;
 
 [queue,priest_quest_complete]
 %priest_progress = ^priest_complete;

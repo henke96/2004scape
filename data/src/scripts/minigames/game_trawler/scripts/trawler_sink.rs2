@@ -58,7 +58,6 @@ cam_reset;
 
 [label,trawler_escape]
 ~mesbox("You climb onto the floating barrel and begin to kick your way to the|shore.");
-if_close;
 p_teleport(^trawler_escape);
 ~update_all(null);
 queue(damage_player, 0, 2);

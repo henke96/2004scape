@@ -89,7 +89,6 @@ if(%itwatchtower_progress = ^itwatchtower_not_started) {
     ~chatnpc_specific(nc_name(tower_guard), tower_guard, "<p,angry>You can't go up there.|That's private that is.");
 } else {
     ~chatnpc_specific(nc_name(tower_guard), tower_guard, "<p,neutral>It is the wizards' helping hand - let 'em up.");
-    if_close;
     @climb_ladder(movecoord(coord, 0, 1, 0), true);
 }
 

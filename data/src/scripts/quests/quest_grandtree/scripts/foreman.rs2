@@ -13,7 +13,6 @@ if(inzone(0_46_47_6_11, 0_46_47_20_20, npc_coord) = true) {
 ~chatplayer("<p,neutral>His gnomes are busy.");
 ~chatnpc("<p,neutral>Hmm...in that case we'd better go to my office.");
 ~chatnpc("<p,neutral>Follow me.");
-if_close;
 npc_setmode(none);
 p_delay(0);
 npc_walk(0_46_47_45_40);
@@ -112,7 +111,6 @@ inv_add(inv, lumber_order, 1);
 ~chatplayer("<p,neutral>OK. I'll head off and give this order to Glough.");
 
 [label,foreman_attack]
-if_close;
 npc_say("Die imposter!");
 npc_setmode(opplayer2);
 
