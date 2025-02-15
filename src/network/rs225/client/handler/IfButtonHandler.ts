@@ -17,18 +17,36 @@ export default class IfButtonHandler extends MessageHandler<IfButton> {
             return false;
         }
 
-        player.lastCom = comId;
-
-        if (player.resumeButtons.indexOf(player.lastCom) !== -1) {
-            if (player.activeScript && player.activeScript.execution === ScriptState.PAUSEBUTTON) {
-                player.executeScript(player.activeScript, true, true);
+        if (player.resumeButtons.indexOf(comId) !== -1) {
+            if (player.activeScript?.execution === ScriptState.PAUSEBUTTON) {
+                const modalMain = player.modalMain;
+                const modalChat = player.modalChat;
+                const modalSide = player.modalSide;
+    
+                player.lastCom = comId;
+                ScriptRunner.execute(player.activeScript);
+    
+                const sameModals = modalMain === player.modalMain && modalChat === player.modalChat && modalSide === player.modalSide;
+                if (sameModals && player.activeScript?.execution !== ScriptState.PAUSEBUTTON) {
+                    player.closeModal();
+                }
             }
         } else {
             const root = Component.get(com.rootLayer);
 
             const script = ScriptProvider.getByTriggerSpecific(ServerTriggerType.IF_BUTTON, comId, -1);
             if (script) {
-                player.executeScript(ScriptRunner.init(script, player), root.overlay == false);
+                const protect = root.overlay == false;
+                if (protect && player.activeScript !== null) {
+                    // osrs modal buttons cancel dialogs (e.g. bank buttons)
+                    if (player.activeScript.execution === ScriptState.COUNTDIALOG) {
+                        player.activeScript = null;
+                    } else {
+                        return false;
+                    }
+                }
+                player.lastCom = comId;
+                player.executeScript(ScriptRunner.init(script, player), protect);
             } else if (Environment.NODE_DEBUG) {
                 player.messageGame(`No trigger for [if_button,${com.comName}]`);
             }

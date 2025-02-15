@@ -9,7 +9,7 @@ import World from '#/engine/World.js';
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 import ScriptState from '#/engine/script/ScriptState.js';
-import {ActiveNpc, ActivePlayer} from '#/engine/script/ScriptPointer.js';
+import ScriptPointer, {ActiveNpc, ActivePlayer} from '#/engine/script/ScriptPointer.js';
 import {HuntIterator, NpcHuntAllCommandIterator} from '#/engine/script/ScriptIterators.js';
 
 import { CoordGrid } from '#/engine/CoordGrid.js';
@@ -316,8 +316,16 @@ const ServerOps: CommandHandlers = {
     // https://x.com/JagexAsh/status/1730321158858276938
     // https://x.com/JagexAsh/status/1814230119411540058
     [ScriptOpcode.WORLD_DELAY]: state => {
-        // arg is popped elsewhere
-        state.execution = ScriptState.WORLD_SUSPENDED;
+        World.enqueueScript(state, state.popInt());
+        state.execution = ScriptState.DELAYED;
+        state.pointerRemove(ScriptPointer.ProtectedActivePlayer);
+        if (state._activePlayer?.activeScript === state) {
+            state._activePlayer.activeScript = null;
+        }
+        state.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
+        if (state._activePlayer2?.activeScript === state) {
+            state._activePlayer2.activeScript = null;
+        }
     },
 
     [ScriptOpcode.PROJANIM_PL]: state => {

@@ -96,6 +96,7 @@ const PlayerOps: CommandHandlers = {
         state.activePlayer = player;
         state.pointerAdd(ActivePlayer[state.intOperand]);
         state.pointerAdd(ProtectedActivePlayer[state.intOperand]);
+        state.activePlayer.activeScript = state;
         state.pushInt(1);
     },
 
@@ -326,22 +327,56 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        state.activePlayer.delayed = true;
         state.activePlayer.delayedUntil = World.currentTick + 1;
-        state.execution = ScriptState.SUSPENDED;
+        state.execution = ScriptState.DELAYED;
+        const secondary: boolean = state.intOperand == 1;
+        if (secondary) {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer);
+            if (state._activePlayer?.activeScript === state) {
+                state._activePlayer.activeScript = null;
+            }
+        } else {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
+            if (state._activePlayer2?.activeScript === state) {
+                state._activePlayer2.activeScript = null;
+            }
+        }
     }),
 
     [ScriptOpcode.P_COUNTDIALOG]: checkedHandler(ProtectedActivePlayer, state => {
         state.activePlayer.write(new PCountDialog());
         state.execution = ScriptState.COUNTDIALOG;
+        const secondary: boolean = state.intOperand == 1;
+        if (secondary) {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer);
+            if (state._activePlayer?.activeScript === state) {
+                state._activePlayer.activeScript = null;
+            }
+        } else {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
+            if (state._activePlayer2?.activeScript === state) {
+                state._activePlayer2.activeScript = null;
+            }
+        }
     }),
 
     // https://x.com/JagexAsh/status/1684478874703343616
     // https://x.com/JagexAsh/status/1780932943038345562
     [ScriptOpcode.P_DELAY]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.delayed = true;
         state.activePlayer.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
-        state.execution = ScriptState.SUSPENDED;
+        state.execution = ScriptState.DELAYED;
+        const secondary: boolean = state.intOperand == 1;
+        if (secondary) {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer);
+            if (state._activePlayer?.activeScript === state) {
+                state._activePlayer.activeScript = null;
+            }
+        } else {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
+            if (state._activePlayer2?.activeScript === state) {
+                state._activePlayer2.activeScript = null;
+            }
+        }
     }),
 
     [ScriptOpcode.P_OPHELD]: checkedHandler(ProtectedActivePlayer, () => {
@@ -386,6 +421,18 @@ const PlayerOps: CommandHandlers = {
     // https://x.com/JagexAsh/status/1389465615631519744
     [ScriptOpcode.P_PAUSEBUTTON]: checkedHandler(ProtectedActivePlayer, state => {
         state.execution = ScriptState.PAUSEBUTTON;
+        const secondary: boolean = state.intOperand == 1;
+        if (secondary) {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer);
+            if (state._activePlayer?.activeScript === state) {
+                state._activePlayer.activeScript = null;
+            }
+        } else {
+            state.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
+            if (state._activePlayer2?.activeScript === state) {
+                state._activePlayer2.activeScript = null;
+            }
+        }
     }),
 
     // https://x.com/JagexAsh/status/1780904271610867780
@@ -778,7 +825,7 @@ const PlayerOps: CommandHandlers = {
 
     // https://x.com/JagexAsh/status/1653407769989349377
     [ScriptOpcode.BUSY]: state => {
-        state.pushInt(state.activePlayer.busy() || state.activePlayer.loggingOut ? 1 : 0);
+        state.pushInt(!state.activePlayer.canAccess() || state.activePlayer.loggingOut ? 1 : 0);
     },
 
     // https://x.com/JagexAsh/status/1791053667228856563
@@ -1035,8 +1082,13 @@ const PlayerOps: CommandHandlers = {
             state.pushInt(0);
             return;
         }
-        state._activePlayer2 = player;
-        state.pointerAdd(ScriptPointer.ActivePlayer2);
+        if (state.intOperand === 0) {
+            state._activePlayer2 = player;
+            state.pointerAdd(ScriptPointer.ActivePlayer2);
+        } else {
+            state._activePlayer = player;
+            state.pointerAdd(ScriptPointer.ActivePlayer);
+        }
         state.pushInt(1);
     }),
 

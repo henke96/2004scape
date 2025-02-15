@@ -98,9 +98,17 @@ const NpcOps: CommandHandlers = {
     }),
 
     [ScriptOpcode.NPC_DELAY]: checkedHandler(ActiveNpc, state => {
-        state.activeNpc.delayed = true;
         state.activeNpc.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
-        state.execution = ScriptState.NPC_SUSPENDED;
+        state.activeNpc.activeScript = state;
+        state.execution = ScriptState.DELAYED;
+        state.pointerRemove(ScriptPointer.ProtectedActivePlayer);
+        if (state._activePlayer?.activeScript === state) {
+            state._activePlayer.activeScript = null;
+        }
+        state.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
+        if (state._activePlayer2?.activeScript === state) {
+            state._activePlayer2.activeScript = null;
+        }
     }),
 
     [ScriptOpcode.NPC_FACESQUARE]: checkedHandler(ActiveNpc, state => {
@@ -486,14 +494,13 @@ const NpcOps: CommandHandlers = {
             return;
         }
         // If npc moved 1 tick ago, delay for 1 tick. If npc moved this tick, delay for 2 ticks
-        state.activeNpc.delayed = true;
         if (state.activeNpc.lastMovement === World.currentTick - 1) {
             state.activeNpc.delayedUntil = World.currentTick + 1;
         } else {
             state.activeNpc.delayedUntil = World.currentTick + 2;
         }
-        
-        state.execution = ScriptState.NPC_SUSPENDED;
+        state.activeNpc.activeScript = state;
+        state.execution = ScriptState.DELAYED;
     }),
 };
 

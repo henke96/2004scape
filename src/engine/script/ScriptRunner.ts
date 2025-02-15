@@ -224,6 +224,21 @@ export default class ScriptRunner {
             state.execution = ScriptState.ABORTED;
         }
 
+        if (state.execution === ScriptState.ABORTED || state.execution === ScriptState.FINISHED) {
+            if (state._activePlayer?.activeScript === state) {
+                state._activePlayer.activeScript = null;
+            }
+            if (state._activePlayer2?.activeScript === state) {
+                state._activePlayer2.activeScript = null;
+            }
+            if (state._activeNpc?.activeScript === state) {
+                state._activeNpc.activeScript = null;
+            }
+            if (state._activeNpc2?.activeScript === state) {
+                state._activeNpc2.activeScript = null;
+            }
+        }
+
         return state.execution;
     }
 

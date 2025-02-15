@@ -13,6 +13,12 @@ export default class TutorialClickSideHandler extends MessageHandler<TutorialCli
             return false;
         }
 
+        // TODO: Should tutorial trigger really be given protected access?
+        player.clearPendingAction();
+        if (!player.canAccess()) {
+            return false;
+        }
+
         const script = ScriptProvider.getByTriggerSpecific(ServerTriggerType.TUTORIAL, -1, -1);
         if (script) {
             player.executeScript(ScriptRunner.init(script, player), true);

@@ -151,8 +151,10 @@
 [command,p_aprange](int $range)
 // Requires protected access - if the player moved this cycle, wait a tick before continuing
 [command,p_arrivedelay]
+[command,.p_arrivedelay]
 // Requires protected access - open a number input dialog
 [command,p_countdialog]
+[command,.p_countdialog]
 // Requires protected access - delay this script/the player for $delay cycles
 [command,p_delay](int $delay)
 [command,.p_delay](int $delay)

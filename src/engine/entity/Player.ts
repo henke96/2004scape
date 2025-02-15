@@ -286,20 +286,16 @@ export default class Player extends PathingEntity {
     cameraPackets: LinkList<CameraInfo> = new LinkList();
     timers: Map<number, EntityTimer> = new Map();
     tabs: number[] = new Array(14).fill(-1);
-    modalState = 0; // 1 - main, 2 - chat, 4 - side, 8 - tutorial
-    modalMain = -1;
-    lastModalMain = -1;
-    modalChat = -1;
-    lastModalChat = -1;
-    modalSide = -1;
-    lastModalSide = -1;
-    modalTutorial = -1;
-    refreshModal = false;
-    refreshModalClose = false;
-    requestModalClose = false;
+    modalMain: number = -1;
+    lastModalMain: number = -1;
+    modalChat: number = -1;
+    lastModalChat: number = -1;
+    modalSide: number = -1;
+    lastModalSide: number = -1;
+    modalTutorial: number = -1;
+    refreshModal: boolean = false;
+    requestModalClose: boolean = false;
 
-    protect: boolean = false; // whether protected access is available
-    activeScript: ScriptState | null = null;
     resumeButtons: number[] = [];
 
     lastItem: number = -1; // opheld, opheldu, opheldt, inv_button
@@ -368,7 +364,6 @@ export default class Player extends PathingEntity {
         }
         super.resetPathingEntity();
         this.repathed = false;
-        this.protect = false;
         this.messageColor = null;
         this.messageEffect = null;
         this.messageType = null;
@@ -516,7 +511,7 @@ export default class Player extends PathingEntity {
 
     updateMovement(): boolean {
         // players cannot walk if they have a modal open *and* something in their queue, confirmed as far back as 2005
-        if (this.moveClickRequest && this.busy() && (this.queue.head() != null || this.engineQueue.head() != null)) {
+        if (this.moveClickRequest && !this.canAccess() && (this.queue.head() != null || this.engineQueue.head() != null)) {
             return false;
         }
 
@@ -590,70 +585,45 @@ export default class Player extends PathingEntity {
     closeModal() {
         this.weakQueue.clear();
 
-        if (!this.delayed) {
-            this.protect = false;
-        }
-
-        if (this.modalState === 0) {
-            return;
-        }
-
-        this.modalState = 0;
-
-        // close any input dialogue suspended scripts.
         if (this.activeScript?.execution === ScriptState.COUNTDIALOG || this.activeScript?.execution === ScriptState.PAUSEBUTTON) {
             this.activeScript = null;
         }
 
-        // close any main viewport interface
-        if (this.modalMain !== -1) {
-            const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalMain);
+        const modalMain = this.modalMain;
+        const modalChat = this.modalChat;
+        const modalSide = this.modalSide;
+        this.modalMain = -1;
+        this.modalChat = -1;
+        this.modalSide = -1;
+
+        if (modalMain !== -1) {
+            const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, modalMain);
             if (closeTrigger) {
                 this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
-
-            this.modalMain = -1;
         }
 
-        // close any chatbox interface
-        if (this.modalChat !== -1) {
-            const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalChat);
+        if (modalChat !== -1) {
+            const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, modalChat);
             if (closeTrigger) {
                 this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
-
-            this.modalChat = -1;
         }
 
-        // close any sidebar tabs interface
-        if (this.modalSide !== -1) {
-            const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, this.modalSide);
+        if (modalSide !== -1) {
+            const closeTrigger = ScriptProvider.getByTrigger(ServerTriggerType.IF_CLOSE, modalSide);
             if (closeTrigger) {
                 this.executeScript(ScriptRunner.init(closeTrigger, this), false);
             }
-
-            this.modalSide = -1;
         }
-
-        this.refreshModalClose = true;
     }
 
-    containsModalInterface() {
-        // main or chat is open
-        return (this.modalState & 1) !== 0 || (this.modalState & 2) !== 0;
-    }
-
-    busy() {
-        return this.delayed || this.containsModalInterface();
+    hasModal() {
+        return this.modalMain !== -1 || this.modalChat !== -1 || this.modalSide !== -1;
     }
 
     canAccess() {
-        if (World.shutdown) {
-            // once the world has gone past shutting down, no protection rules apply
-            return true;
-        } else {
-            return !this.protect && !this.busy();
-        }
+        return this.activeScript === null && !this.hasModal();
     }
 
     /**
@@ -885,12 +855,12 @@ export default class Player extends PathingEntity {
     // we process walktriggers from regular movement in client input,
     // and for each interaction.
     processWalktrigger() {
-        if (this.walktrigger !== -1 && !this.protect && !this.delayed) {
+        if (this.walktrigger !== -1 && this.canAccess()) {
             const trigger = ScriptProvider.get(this.walktrigger);
             this.walktrigger = -1;
             if (trigger) {
                 const script = ScriptRunner.init(trigger, this);
-                this.runScript(script, true);
+                this.executeScript(script, true);
             }
         }
     }
@@ -1006,7 +976,7 @@ export default class Player extends PathingEntity {
         }
 
         // For Npc targets, validate that the Npc is found in the world and that it's not delayed
-        if (this.target instanceof Npc && (typeof World.getNpc(this.target.nid) === 'undefined' || this.target.delayed)) {
+        if (this.target instanceof Npc && (typeof World.getNpc(this.target.nid) === 'undefined' || this.target.delayed())) {
             return false;
         }
 
@@ -1733,50 +1703,34 @@ export default class Player extends PathingEntity {
         }
     }
 
+    openMainModalSide(top: number, side: number) {
+        this.closeModal();
+        this.modalMain = top;
+        this.modalSide = side;
+        this.refreshModal = true;
+    }
+
     openMainModal(com: number) {
-        if ((this.modalState & 2) !== 0) {
-            // close chat modal if we're opening a new main modal
-            this.write(new IfClose());
-            this.modalState &= ~2;
-            this.modalChat = -1;
-        }
-
-        if ((this.modalState & 4) !== 0) {
-            // close side modal if we're opening a new main modal
-            this.write(new IfClose());
-            this.modalState &= ~4;
-            this.modalSide = -1;
-        }
-
-        this.modalState |= 1;
+        this.closeModal();
         this.modalMain = com;
         this.refreshModal = true;
     }
 
     openChat(com: number) {
-        this.modalState |= 2;
+        this.closeModal();
         this.modalChat = com;
         this.refreshModal = true;
     }
 
     openSideModal(com: number) {
-        this.modalState |= 4;
+        this.closeModal();
         this.modalSide = com;
         this.refreshModal = true;
     }
 
     openTutorial(com: number) {
         this.write(new TutOpen(com));
-        this.modalState |= 8;
         this.modalTutorial = com;
-    }
-
-    openMainModalSide(top: number, side: number) {
-        this.modalState |= 1;
-        this.modalMain = top;
-        this.modalState |= 4;
-        this.modalSide = side;
-        this.refreshModal = true;
     }
 
     exactMove(startX: number, startZ: number, endX: number, endZ: number, startCycle: number, endCycle: number, direction: number) {
@@ -1849,63 +1803,15 @@ export default class Player extends PathingEntity {
 
     // ----
 
-    runScript(script: ScriptState, protect: boolean = false, force: boolean = false) {
-        if (!force && protect && (this.protect || this.delayed)) {
-            // can't get protected access, bye-bye
-            // printDebug('No protected access:', script.script.name, protect, this.protect);
-            return -1;
-        }
-
+    executeScript(script: ScriptState, protect: boolean) {
         if (protect) {
+            if (this.activeScript !== null) {
+                throw new Error(`Can't execute ${script.script.name} protected with ${this.activeScript.script.name} already active`);
+            }
             script.pointerAdd(ScriptPointer.ProtectedActivePlayer);
-            this.protect = true;
+            this.activeScript = script;
         }
-
-        const state = ScriptRunner.execute(script);
-
-        if (protect) {
-            this.protect = false;
-        }
-
-        if (script.pointerGet(ScriptPointer.ProtectedActivePlayer) && script._activePlayer) {
-            script.pointerRemove(ScriptPointer.ProtectedActivePlayer);
-            script._activePlayer.protect = false;
-        }
-
-        if (script.pointerGet(ScriptPointer.ProtectedActivePlayer2) && script._activePlayer2) {
-            script.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
-            script._activePlayer2.protect = false;
-        }
-
-        return state;
-    }
-
-    executeScript(script: ScriptState, protect: boolean = false, force: boolean = false) {
-        // printDebug('Executing', script.script.name);
-
-        const state = this.runScript(script, protect, force);
-        if (state === -1) {
-            // printDebug('Script did not run', script.script.name, protect, this.protect);
-            return;
-        }
-
-        if (state !== ScriptState.FINISHED && state !== ScriptState.ABORTED) {
-            if (state === ScriptState.WORLD_SUSPENDED) {
-                World.enqueueScript(script, script.popInt());
-            } else if (state === ScriptState.NPC_SUSPENDED) {
-                script.activeNpc.activeScript = script;
-            } else {
-                script.activePlayer.activeScript = script;
-                script.activePlayer.protect = protect; // preserve protected access when delayed
-            }
-        } else if (script === this.activeScript) {
-            this.activeScript = null;
-
-            if ((this.modalState & 1) === 0) {
-                // close chat dialogues automatically and leave main modals alone
-                this.closeModal();
-            }
-        }
+        ScriptRunner.execute(script);
     }
 
     wrappedMessageGame(mes: string) {
