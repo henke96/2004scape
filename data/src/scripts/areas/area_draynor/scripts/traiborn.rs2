@@ -21,7 +21,6 @@ if(inv_total(inv, bones) < 1) {
 
 [label,demon_slayer_traiborn_give_bones]
 if(%demon_progress >= ^demon_find_bones & %demon_progress < ^demon_got_traiborn_key & inv_total(inv, bones) > 0) {
-    if_close();
     inv_del(inv, bones, 1);
     mes("You give Traiborn a set of bones.");
     p_delay(1);
@@ -203,7 +202,6 @@ if (%demon_progress = ^demon_got_traiborn_key) {
 ~mesbox("Traiborn waves his arms about.");
 ~chatnpc("<p,confused>Wings of dark and colour too,|Spreading in the morning dew;|Locked away I have a key;|Return it now, please, unto me.");
 ~mesbox("The wizard waves his arms some more.");
-if_close();
 p_delay(2);
 mes("Traiborn hands you a key");
 inv_add(inv, demon_traiborn_key, 1);

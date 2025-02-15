@@ -63,7 +63,6 @@ if(testbit(%bioerrand, ^hops_correct) = true) {
     ~chatplayer("<p,confused>Please tell me that you haven't drunk the contents...");
     ~chatnpc("<p,shock>Oh the gods no! What do you take me for?");
     ~chatnpc("<p,neutral>Here's your vial anyway.");
-    if_close;
     mes("He gives you the vial of sulphuric broline.");
     inv_add(inv, sulphuric_broline, 1);
     %bioerrand = clearbit(%bioerrand, ^hops_given);

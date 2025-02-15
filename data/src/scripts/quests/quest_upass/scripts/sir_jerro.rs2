@@ -33,6 +33,5 @@ mes("The Paladin gives you some food.");
 
 [label,upass_paladin_after_killed]
 ~chatplayer("<p,happy>Hello.");
-if_close;
 npc_say("You again... die Zamorakian scum!");
 ~npc_retaliate(0);

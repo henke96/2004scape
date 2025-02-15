@@ -402,7 +402,6 @@ inv_add(inv, magic_ogre_potion, 1);
 %itwatchtower_progress = ^itwatchtower_made_potion;
 ~chatplayer("<p,happy>I have made the potion.");
 ~chatnpc("<p,happy>That's great news; let me infuse it with magic...");
-if_close;
 mes("The wizard mutters strange words over the liquid...");
 p_delay(3);
 ~chatnpc("<p,neutral>Here it is - a dangerous substance.|I must remind you that this potion can only be used|if your magic ability is high enough.");

@@ -151,7 +151,6 @@ if ($choice = 2) {
     mes("You choose not to shoo away the cat."); //osrs
     return;
 }
-if_close;
 say("Shoo cat!");
 npc_say("Meeeooow!");
 npc_setmode(playerescape);

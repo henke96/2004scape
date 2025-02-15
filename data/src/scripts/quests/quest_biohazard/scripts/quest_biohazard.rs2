@@ -77,7 +77,6 @@ mes("You open the cage");
 mes("The pigeons don't want to leave");
 
 [label,biohazard_climb_ladder](coord $dest)
-if_close;
 mes("You climb up the rope ladder...");
 if (loc_find(0_39_51_61_3, loc_2066) = true) {
     loc_change(loc_2065, 4);

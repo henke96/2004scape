@@ -12,7 +12,6 @@ switch_int(%tree_progress) {
         def_int $y_coord = ~p_choice5_header("0001", 1, "0002", 2, "0003", 3, "0004", 4, "0005", 5, "Enter the y-coordinate of the stronghold");
         ~mesbox("You fire the ballista.|The huge spear flies through the air...");
         def_coord $projectile_start = 0_39_50_13_13;
-        if_close;
         loc_anim(seq_730);
         // play synth treevillage_catabow_launch, added in early 2007 I think?
         ~coord_projectile($projectile_start, movecoord($projectile_start, 0, 0, 41), spotanim_182, 23, 0, 110, 7, 0, 0, 0);
@@ -48,7 +47,6 @@ if(coordz(coord) > coordz(loc_coord)) {
 }
 if(%tree_progress >= ^tree_ballista_fired) {
     ~mesbox("The wall has been reduced to rubble.|It should be possible to climb over the remains.");
-    if_close;
     def_coord $start = movecoord(loc_coord, 0, 0, -1);
     ~forcewalk2($start);
     ~agility_exactmove(human_walk_crumbledwall, 30, 2, $start, movecoord($start, 0, 0, 2), 30, 100, ^exact_north, true);

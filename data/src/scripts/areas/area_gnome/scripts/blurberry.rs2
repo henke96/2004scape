@@ -55,7 +55,6 @@ if(inv_total(inv, coins) < 10) {
     ~chatplayer("<p,sad>I don't have 10 coins right now.");
     return;
 }   
-if_close;
 inv_del(inv, coins, 10);
 mes("You buy a Fire Toad Blast.");
 p_delay(2);

@@ -52,7 +52,6 @@ switch_int(%hazeelcult_progress) {
             ~mesbox("Alomone continues to recite the scroll. It is a language you have never heard and do not understand at all.");
             ~chatnpc("<p,neutral>Dintenta! Sententa! Retenta! Q'exjta! Ia! Sottottott! Ia! Dysmenta junque fammatio svelken! Sottey! Sentey! SOLOMENT!");
             ~mesbox("As Alomone finishes reading from the scroll you hear a shrill scream emanate from Hazeel's coffin.");
-            if_close;
             npc_add(0_40_151_47_5, hazeel, 100);
             npc_anim(seq_801, 0);
             p_delay(5);

@@ -62,7 +62,6 @@ if(map_members = false) {
 if(testbit(%bioerrand, ^chancy_correct) = true) {
     ~chatplayer("<p,happy>Hi, thanks for doing that.");
     ~chatnpc("<p,happy>No problem.");
-    if_close;
     mes("He gives you the vial of liquid honey.");
     inv_add(inv, liquid_honey, 1);
     %bioerrand = clearbit(%bioerrand, ^chancy_given);

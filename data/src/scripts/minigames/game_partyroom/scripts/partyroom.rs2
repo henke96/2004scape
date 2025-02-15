@@ -9,7 +9,6 @@ if(inv_total(inv, coins) < 5000) {
     return;
 }
 def_int $choice = ~p_choice2_header("Yes.", 1, "No.", 2, "Continue?");
-if_close;
 if ($choice = 2) {
     return;
 }
@@ -31,7 +30,6 @@ if(inv_total(inv, coins) < 2000) {
     return;
 }
 def_int $choice = ~p_choice2_header("Yes.", 1, "No.", 2, "Continue?");
-if_close;
 if ($choice = 2) {
     return;
 }

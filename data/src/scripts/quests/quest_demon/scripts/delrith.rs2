@@ -73,7 +73,6 @@ if ($option = 1) {
 }
 
 [label,demon_slayer_wrong_incantation]
-if_close;
 ~mesbox("As you chant, Delrith is sucked towards the vortex....");
 if (npc_find(coord, weakened_delrith, 8, 0) = true) {
     // On restore Delrith does not keep attacking you in 2004
@@ -88,7 +87,6 @@ if (npc_find(coord, weakened_delrith, 8, 0) = true) {
 // Between 20 feb and 6 march 2006 this becomes 2 separate message boxes
 // https://www.youtube.com/watch?v=w7uLKC_rYfc
 ~mesbox("As you chant, Delrith is sucked towards the vortex...|Back to the dark dimension from which he came...");
-if_close;
 if (npc_find(coord, weakened_delrith, 8, 0) = true) {
     gosub(npc_death);
     queue(demon_slayer_complete, 1);

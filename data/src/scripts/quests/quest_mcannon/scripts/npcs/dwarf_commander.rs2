@@ -144,7 +144,6 @@ if (inv_total(inv, tool_kit) < 1) {
 ~chatnpc("<p,happy>Hello there traveller, how's things?");
 ~chatplayer("<p,neutral>Well, I think I've done it, take a look...");
 ~chatnpc("<p,happy>Really?");
-if_close;
 p_delay(1);
 mes("The Dwarf Commander pops into the shed to take a closer look.");
 p_delay(1);

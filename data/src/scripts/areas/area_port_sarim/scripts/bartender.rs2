@@ -49,7 +49,6 @@ if(inv_total(inv, coins) < 7) {
     ~chatplayer("<p,sad>I don't have 8 coins with me.");
     return;
 }
-if_close;
 %barcrawl_progress = setbit(%barcrawl_progress, ^rustyanchor_index);
 inv_del(inv, coins, 8);
 mes("You buy a Black Skull Ale.");

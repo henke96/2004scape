@@ -6,7 +6,6 @@ if(%desertrescue_progress = ^desertrescue_saved_ana & inzone(0_51_48_36_37, 0_51
         inv_add(inv, desertrescue_ironkey, 1);
         ~objbox(desertrescue_ironkey, "Ana gives you a wrought iron key...", 250, 0, 0);
     }
-    if_close;
     mes("Ana spots Irena and waves...");
     p_delay(2);
     npc_del;
@@ -77,7 +76,6 @@ if(last_useitem = desertrescue_barrel) {
     } else {
         ~chatnpc("<p,angry>Hey, what do you think you're doing? Leave me alone and let me get on with my work. Else we'll both be in trouble. Oh no, NOT AGAIN!");
     }
-    if_close;
     inv_del(inv, desertrescue_barrel, 1);
     inv_add(inv, anainabarrel, 1);
     npc_del;
@@ -105,7 +103,6 @@ if(~inzone_coord_pair_table(mining_camp_zones, coord) = false) {
 if(inzone(0_51_47_20_23, 0_51_47_23_29, coord) = true) { // if in jail do nothing (OSRS behaviour)
     return;
 }
-if_close;
 inv_del(inv, anainabarrel, 1);
 inv_add(inv, desertrescue_barrel, 1);
 npc_add(map_findsquare(coord, 1, 1, ^map_findsquare_lineofwalk), ana, 8);

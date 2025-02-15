@@ -13,11 +13,9 @@ if(%seaslug_progress ! ^seaslug_sailed_kent) {
 ~chatnpc("<p,neutral>It was the sea slugs, they attach themselves to your body and somehow take over the mind of the carrier.");
 ~chatnpc("<p,neutral>I told Kennith to hide until I returned but I was washed up here.");
 ~chatnpc("<p,neutral>Please go back and get my boy, you can send help for me later.");
-if_close;
 %seaslug_progress = ^seaslug_spoken_kent;
 p_delay(2);
 ~chatnpc("<p,shock>Traveller wait!");
-if_close;
 mes("Kent reaches behind your neck.");
 p_delay(1);
 mes("*slooop*");

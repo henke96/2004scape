@@ -45,7 +45,6 @@ if ($x > 0) {
 
 if (%magearena >= ^mage_arena_complete) {
     ~mesbox("You step into the pool of sparkling water. You feel energy rush through your veins.");
-    if_close;
 }
 
 if ($outside_edge ! coord) {

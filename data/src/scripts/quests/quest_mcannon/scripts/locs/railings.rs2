@@ -69,7 +69,6 @@ p_delay(2);
 
 def_int $choice = ~p_choice2("Try to replace the railing.", 1, "Leave it be.", 2);
 if ($choice = 1) {
-    if_close;
     p_delay(2);
 
     mes("You attempt to replace the missing railing...");

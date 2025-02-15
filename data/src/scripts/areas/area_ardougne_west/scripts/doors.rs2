@@ -58,7 +58,6 @@ switch_int(%biohazard_progress) {
     case ^biohazard_poisoned_stew, ^biohazard_found_distillator :
         if(inv_total(worn, doctors_gown) > 0) {
             ~chatnpc_specific(nc_name(npc_357), npc_357, "<p,neutral>In you go doc.");
-            if_close;
             ~open_and_close_door2(loc_param(next_loc_stage), ~check_axis(coord, loc_coord, loc_angle), door_open);
             return;
         }
