@@ -63,10 +63,8 @@ switch_int(~p_choice2("Yes please.", 1, "No thank you.", 2)) {
 
 [label,spirit_tree_tele](coord $dest)
 if(map_members = false) {
-    if_close;
     mes(^mes_members_feature);
     return;
 }
 ~mesbox("You place your hands on the dry tough bark of the spirit tree,|and feel a surge of energy run through your veins.");
-if_close;
 @climb_ladder($dest, true);

@@ -9,11 +9,9 @@ switch_int(%biohazard_progress) {
         @multi2("Ok, lets do it.", omart_letsdo, "I'll be back soon.", omart_backsoon);
     case ^biohazard_released_pigeons :
         ~chatnpc("<p,happy>Well done, the guards are having real trouble with those birds. You must go now traveller, it's your only chance.");
-        if_close;
         mes("Omart calls to his associate.");
         p_delay(5); // 6t?
         ~chatnpc("<p,neutral>Kilron!");
-        if_close;
         mes("He throws one end of the rope ladder over the wall.");
         p_delay(3); // 4t
         ~chatnpc("<p,neutral>You must go now traveller.");

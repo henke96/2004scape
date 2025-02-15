@@ -53,7 +53,6 @@ if($option = 1) {
 }
 
 [label,rdpt_teleport]
-if_close;
 npc_say("Dipsolum sententa sententi!");
 spotanim_pl(curse_impact, 124, 70);
 spotanim_npc(curse_casting, 92, 0);

@@ -43,7 +43,6 @@ if(inv_total(inv, coins) < 15) {
     ~chatplayer("<p,sad>Sorry I don't have 15 coins.");
     return;
 }
-if_close;
 inv_del(inv, coins, 15);
 %barcrawl_progress = setbit(%barcrawl_progress, ^deadman_index);
 mes("The bartender serves you a glass of strange thick dark liquid.");

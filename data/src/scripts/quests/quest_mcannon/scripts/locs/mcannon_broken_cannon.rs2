@@ -60,7 +60,6 @@ if (inv_total(inv, tool_kit) < 1) {
     return;
 }
 
-if_close;
 mes("You use your tool kit and attempt to fix the <$part_name>...");
 p_delay(2);
 

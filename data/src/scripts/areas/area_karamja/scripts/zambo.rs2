@@ -25,7 +25,6 @@ if(inv_total(inv, coins) < 7) {
     ~chatplayer("<p,sad>I don't have 7 coins right now.");
     return;
 }
-if_close;
 inv_del(inv, coins, 7);
 mes("You buy some Ape Bite Liqueur.");
 p_delay(2);

@@ -99,7 +99,6 @@ switch_int(%tree_progress) {
         p_stopaction;
         queue(tree_quest_complete, 0);
         ~mesbox("The gnomes begin to chant. Meanwhile, King Bolren holds the orbs of protection out in front of him.");
-        if_close;
         p_walk(0_39_49_46_34);
         npc_walk(0_39_49_46_33);
         npc_setmode(none); // no mode because we don't want bolren to start moving

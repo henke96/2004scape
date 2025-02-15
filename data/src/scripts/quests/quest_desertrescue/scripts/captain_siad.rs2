@@ -166,7 +166,6 @@ mes("The Captain goes back to his desk and starts studying.");
 if(%desertrescue_progress < ^desertrescue_complete) {
     return;
 }
-if_close;
 mes("The guards search you!");
 p_delay(1);
 if(inv_total(inv, desertrescue_cell_door_key) > 0) {

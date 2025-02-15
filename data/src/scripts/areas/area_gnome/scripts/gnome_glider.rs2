@@ -72,7 +72,6 @@ if(%grandtree_progress = ^grandtree_released_prison & inzone(3_38_54_31_43, 3_38
         case 1 :
             ~chatplayer("<p,happy>Take me to Karamja please!");
             ~chatnpc("<p,happy>OK! You're the boss!|Hold on tight, it'll be a rough ride!");
-            if_close;
             p_teleport(0_45_47_37_50);
             p_delay(4);
             // https://youtu.be/-jfueZpRhzU?si=yYCGWkah1TccT9cL&t=621

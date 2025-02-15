@@ -21,7 +21,6 @@ if($option = 1) {
         ~chatplayer("<p,sad>I don't have that much money on me.");
         return;
     }  
-    if_close;
     inv_del(inv, coins, 70);
     mes("You buy a Hand of Death cocktail.");
     p_delay(2);

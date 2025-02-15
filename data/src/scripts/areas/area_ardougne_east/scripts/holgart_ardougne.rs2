@@ -89,7 +89,6 @@ switch_int(~p_choice2("I'll come back later.", 1, "Okay, let's do it.", 2)) {
 }
 
 [proc,board_ardougne_to_fishing_platform]
-if_close;
 mes("You board the small row boat.");
 if(inv_total(inv, lit_torch) > 0) {
     def_int $count = inv_total(inv, lit_torch);
