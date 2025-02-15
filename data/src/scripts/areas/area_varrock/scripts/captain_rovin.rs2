@@ -39,7 +39,6 @@ if ($option = 1) {
         ~chatplayer("<p,neutral>I'm going to use the powerful sword Silverlight, which I believe you have one of the keys for?");
         // RSC let you repeat this OSRS is what added blocks
         ~chatnpc("<p,quiz>Yes you are right. Here you go.");
-        if_close();
         p_delay(2);
         mes("Captain Rovin hands you a key.");
         inv_add(inv, demon_rovin_key, 1);

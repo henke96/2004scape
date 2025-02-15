@@ -53,7 +53,6 @@ switch_int($choice) {
 }
 ~chatnpc("<p,neutral>20 coins please.");
 if (inv_total(inv, coins) < 20) {
-    if_close;
     mes("You do not have enough money to buy that.");
     return;
 }

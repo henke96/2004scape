@@ -11,7 +11,6 @@ switch_int(~p_choice2("Okay then.", 1, "No thanks.", 2)) {
     case 1 :
         ~chatplayer("<p,happy>Okay then.");
         ~chatnpc("<p,happy>Here you go... Hic!");
-        if_close;
         mes("You take a sip of brew from Kamen's glass..");
         mes("It tastes horrific and burns your throat.");
         say("Aaarrgghh!");

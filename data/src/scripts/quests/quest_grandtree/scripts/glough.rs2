@@ -27,7 +27,6 @@ switch_int(%grandtree_progress) {
         ~chatplayer("<p,angry>I know the Grand Tree's dying!|And I think you're part of the reason.");
         ~chatnpc("<p,angry>How dare you accuse me! I'm the head tree guardian!");
         ~chatnpc("<p,angry>Guards! Guards!");
-        if_close;
         // 50t osrs, this (probably?) uses an attackable guard before late 2005 (lol)
         if(npc_find(coord, gnome_guard_halberd, 7, 0) = false) {
             npc_add(1_38_54_44_6, gnome_guard_halberd, 50);
@@ -38,7 +37,6 @@ switch_int(%grandtree_progress) {
         npc_walk($dest);
         if($dist_delay > 0) p_delay(calc($dist_delay + 1));
         ~chatnpc("<p,angry>Come with me!");
-        if_close;
         $dest = 1_38_54_45_7;
         p_delay(4);
         ~forcewalk($dest);
@@ -96,7 +94,6 @@ p_delay(distance($start, coord)); // walking dist + 1 tick
 ~chatplayer("<p,angry>What makes you think I'll let you get away with it?");
 npc_setmode(none);
 ~chatnpcnoturn("<p,laugh>Fool...meet my little friend!");
-if_close;
 def_coord $demon_spawn = 0_38_154_47_11;
 npc_walk(0_38_154_58_6);
 npc_facesquare($demon_spawn);

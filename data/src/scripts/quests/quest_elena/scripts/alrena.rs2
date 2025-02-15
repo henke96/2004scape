@@ -14,7 +14,6 @@ switch_int(%elena_progress) {
         } else {
             ~chatplayer("<p,happy>Yes I've got some here.");
             ~objbox(dwellberry, "You give the <lowercase(oc_name(dwellberry))> to <nc_name(alrena)>.", 250, 0, divide(^objbox_height, 2));
-            if_close;
             mes("<nc_name(alrena)> crushes the berries into a smooth paste.");
             npc_anim(human_herbing_grind, 0);
             p_delay(2); // 3t rsc

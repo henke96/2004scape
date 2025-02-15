@@ -4,7 +4,6 @@ if(%itgronigen_progress < ^itgronigen_complete) {
     // dialogue doesn't exist on OSRS
     ~chatnpc_specific(nc_name(observatory_assistant), observatory_assistant, "<p,neutral>Take great care down there.|Remember the goblins have taken over the cavern.");
     ~chatplayer("<p,neutral>Oh, okay thanks for the warning.");
-    if_close;
 }
 anim(human_pickupfloor, 0);
 p_delay(1);

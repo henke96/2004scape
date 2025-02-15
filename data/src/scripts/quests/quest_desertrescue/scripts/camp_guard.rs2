@@ -27,7 +27,6 @@ if(~wearing_slave_robes = true) {
             case 2 :
                 ~chatplayer("<p,neutral>Your head on a stick.");
                 ~chatnpc("<p,angry>Why you ungrateful whelp.. I'll teach you some manners.");
-                if_close;
                 ~npc_retaliate(0);
                 mes("The guard shouts for help.");
                 p_delay(0);
@@ -94,7 +93,6 @@ npc_say("Oh, want a fight do you!");
 ~mercenary_camp_attack;
 
 [proc,mercenary_camp_attack]
-if_close;
 ~npc_retaliate(0);
 ~desertcamp_guard_search;
 
