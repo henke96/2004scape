@@ -6,6 +6,7 @@ import Player from '#/engine/entity/Player.js';
 import InvButton from '#/network/client/model/InvButton.js';
 import MessageHandler from '#/network/client/handler/MessageHandler.js';
 import Environment from '#/util/Environment.js';
+import ScriptState from '#/engine/script/ScriptState.js';
 
 export default class InvButtonHandler extends MessageHandler<InvButton> {
     handle(message: InvButton, player: Player): boolean {
@@ -31,13 +32,6 @@ export default class InvButtonHandler extends MessageHandler<InvButton> {
             return false;
         }
 
-        if (player.delayed) {
-            return false;
-        }
-
-        player.lastItem = item;
-        player.lastSlot = slot;
-
         let trigger: ServerTriggerType;
         if (op === 1) {
             trigger = ServerTriggerType.INV_BUTTON1;
@@ -55,7 +49,19 @@ export default class InvButtonHandler extends MessageHandler<InvButton> {
         if (script) {
             const root = Component.get(com.rootLayer);
 
-            player.executeScript(ScriptRunner.init(script, player), root.overlay == false);
+            const protect = root.overlay == false;
+
+            // osrs inv buttons cancel dialogs (e.g. bank items)
+            if (protect && player.suspendedScript?.execution === ScriptState.COUNTDIALOG) {
+                player.cancelSuspendedScript();
+            }
+            if (protect && player.protectedAccessScript !== null) {
+                return false;
+            }
+
+            player.lastItem = item;
+            player.lastSlot = slot;
+            player.executeScript(ScriptRunner.init(script, player), protect);
         } else if (Environment.NODE_DEBUG) {
             player.messageGame(`No trigger for [${ServerTriggerType.toString(trigger)},${com.comName}]`);
         }

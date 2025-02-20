@@ -40,5 +40,5 @@ if (%tutorial_progress = ^tutorial_opened_financial_advisor_door) {
 
 [proc,set_hint_icon_financial_advisor]
 if (npc_find(0_48_48_56_52, financial_advisor, 5, 0) = true) {
-    hint_npc(npc_uid);
+    hint_npc;
 }

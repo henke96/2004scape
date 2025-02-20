@@ -141,9 +141,9 @@ switch_category(oc_category($rhand)) {
 [proc,ranged_shoot_npc](obj $ammo)(int)
 spotanim_pl(oc_param($ammo, proj_launch), 96, 0);
 inv_moveitem(worn, ranged_quiver_inv, $ammo, 1);
-return(~npc_projectile(coord, npc_uid, oc_param($ammo, proj_travel), 40, 36, 41, 15, 5, 11, 5));
+return(~npc_projectile(coord, oc_param($ammo, proj_travel), 40, 36, 41, 15, 5, 11, 5));
 
 [proc,ranged_throw_npc](obj $ammo)(int)
 spotanim_pl(oc_param($ammo, proj_launch), 96, 0);
 inv_moveitem(worn, ranged_quiver_inv, $ammo, 1);
-return(~npc_projectile(coord, npc_uid, oc_param($ammo, proj_travel), 40, 36, 32, 15, 0, 11, 5));
+return(~npc_projectile(coord, oc_param($ammo, proj_travel), 40, 36, 32, 15, 0, 11, 5));

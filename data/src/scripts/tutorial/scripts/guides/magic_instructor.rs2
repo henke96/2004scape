@@ -79,7 +79,7 @@ if (%tutorial_progress = ^tutorial_successful_wind_strike) {
 //npc_anim(vulnerability_casting, 0);
 //spotanim_npc(curse_cast, 92, 0);
 //sound_synth(curse_all, 0, 0);
-//def_int $duration = ~player_projectile(npc_coord, coord, uid, curse_travel, 31, 31, 61, 16, 0, 128, 5);
+//def_int $duration = ~player_projectile(npc_coord, curse_travel, 31, 31, 61, 16, 0, 128, 5);
 //spotanim_pl(curse_hit, 124, 70);
 //p_delay(4);
 @tutorial_complete;
@@ -95,5 +95,5 @@ inv_add(inv, mindrune, 5);
 
 [proc,set_hint_icon_magic_instructor]
 if (npc_find(0_49_48_5_17, magic_instructor, 10, 0) = true) {
-    hint_npc(npc_uid);
+    hint_npc;
 }

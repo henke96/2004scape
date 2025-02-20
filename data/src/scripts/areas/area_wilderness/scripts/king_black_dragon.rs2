@@ -141,7 +141,7 @@ if (calc($z / 2) <= $x & calc($x / 2) <= $z) { // south-west
 } else { // west
     $projectile_coord = movecoord($npc_coord, -1, 0, 0);
 }
-def_int $duration = ~player_projectile($projectile_coord, coord, uid, spotanim_54, 92, 31, 51, 16, -5, 64, 10);
+def_int $duration = ~player_projectile($projectile_coord, spotanim_54, 92, 31, 51, 16, -5, 64, 10);
 
 npc_anim(dragon_firebreath_middle_attack, 0);
 sound_synth(firebreath, 0, 30);

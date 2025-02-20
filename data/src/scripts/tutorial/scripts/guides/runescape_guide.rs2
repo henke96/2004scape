@@ -42,6 +42,6 @@ if (map_production = false) {
 [proc,set_hint_runescape_guide]
 if (%tutorial_progress < ^runescape_guide_interact_with_scenery) {
     if (npc_find(0_48_48_21_35, runescape_guide, 10, 0) = true) {
-      hint_npc(npc_uid);
+      hint_npc;
     }
 }

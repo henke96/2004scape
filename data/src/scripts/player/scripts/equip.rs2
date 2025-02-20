@@ -98,7 +98,7 @@ if (.p_finduid(.uid) = true) {
         return;
     }
     def_int $count = .inv_getnum(worn, $slot);
-    def_int $overflow = .inv_itemspace2(inv, $obj, $count, .inv_size(inv));
+    def_int $overflow = .inv_itemspace2(inv, $obj, $count, inv_size(inv));
     if ($overflow >= $count) {
         return;
     }
@@ -248,7 +248,7 @@ def_int $strengthbonus = 0;
 def_int $prayerbonus = 0;
 def_int $rangebonus = 0;
 
-def_int $size = .inv_size(worn);
+def_int $size = inv_size(worn);
 def_int $i = 0;
 while ($i < $size) {
     def_obj $obj = .inv_getobj(worn, $i);

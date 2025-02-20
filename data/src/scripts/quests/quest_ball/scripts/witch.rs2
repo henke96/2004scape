@@ -19,7 +19,7 @@ if(lineofsight(npc_coord, coord) = true & (($dz > 0 & loc_find(movecoord(coord, 
         spotanim_npc(curse_casting, 92, 0);
         sound_synth(curse_all, 0, 0);
         spotanim_pl(curse_impact, 124, 100);
-        ~player_projectile(npc_coord, coord, uid, curse_travel, 31, 31, 61, 16, 39, 128, 0);
+        ~player_projectile(npc_coord, curse_travel, 31, 31, 61, 16, 39, 128, 0);
         p_delay(3);
         if(%ball_progress = ^ball_unlocked_mousedoor) {
             %ball_progress = ^ball_started;

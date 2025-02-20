@@ -66,7 +66,7 @@ def_coord $coord2;
 def_int $i = 0;
 while($i < db_getfieldcount($data, coord_pair_table:coord_pair)) {
     $coord1, $coord2 = db_getfield($data, coord_pair_table:coord_pair, $i);
-    if(.inzone($coord1, $coord2, $coord) = true) {
+    if(inzone($coord1, $coord2, $coord) = true) {
         return (true);
     } else {
         $i = add($i, 1);

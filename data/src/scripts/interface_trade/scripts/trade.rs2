@@ -10,7 +10,7 @@ while ($i < $size) {
 }
 
 [proc,.moveallinv](inv $src, inv $dest)
-def_int $size = .inv_size($src);
+def_int $size = inv_size($src);
 def_int $i = 0;
 while ($i < $size) {
     def_obj $obj = .inv_getobj($src, $i);
@@ -55,11 +55,10 @@ if (.%tradepartner = uid) {
     .invother_transmit(uid, tempinv, trademain:otherinv);
     .inv_transmit(inv, tradeside:inv);
 
-    if_openmain_side(trademain, tradeside);
-    .if_openmain_side(trademain, tradeside);
-
     %tradestatus = 0;
     .%tradestatus = 0;
+    if_openmain_side(trademain, tradeside);
+    .if_openmain_side(trademain, tradeside);
 } else {
     .mes("<displayname>:tradereq:");
 }
@@ -132,14 +131,13 @@ if (.finduid(%tradepartner) = true) {
             .inv_transmit(tempinv, tradeconfirm:inv2);
         }
 
+        %tradestatus = 2;
+        .%tradestatus = 2;
         if_openmain(tradeconfirm);
         .if_openmain(tradeconfirm);
 
         if_settext(tradeconfirm:com_91, "Are you sure you want to make this trade?");
         .if_settext(tradeconfirm:com_91, "Are you sure you want to make this trade?");
-
-        %tradestatus = 2;
-        .%tradestatus = 2;
     } else {
         if_settext(trademain:status, "Waiting for other player..."); // https://youtu.be/uSO-ilQk5XY?list=PLn23LiLYLb1bQ7Hwp77KoNBjKvpZQTfJT&t=817
         .if_settext(trademain:status,"Other player has accepted."); // https://storage.googleapis.com/tannerdino/images/06Dec14-16.jpg
@@ -179,7 +177,7 @@ return(true);
 
 [proc,.enough_trade_space]()(boolean)
 def_int $space = inv_freespace(inv);
-def_int $size = .inv_size(tempinv);
+def_int $size = inv_size(tempinv);
 def_int $slot = 0;
 while ($slot < $size) {
     def_obj $obj = .inv_getobj(tempinv, $slot);
@@ -218,7 +216,7 @@ while ($slot < inv_size($inv)) {
 
 [proc,.inv_remove_leading_empty_slots](inv $inv)
 def_int $slot = 0;
-while ($slot < .inv_size($inv)) {
+while ($slot < inv_size($inv)) {
     if (.inv_getobj($inv, $slot) ! null) {
         .inv_movefromslot($inv, $inv, $slot);
     }
@@ -229,6 +227,10 @@ while ($slot < .inv_size($inv)) {
 inv_stoptransmit(trademain:inv);
 inv_stoptransmit(trademain:otherinv);
 inv_stoptransmit(tradeside:inv);
+if (%tradestatus >= 2) {
+    // proceeding to confirm modal
+    return;
+}
 
 ~moveallinv(tempinv, inv);
 

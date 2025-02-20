@@ -1,19 +1,31 @@
 // examples
-// npc_projectile(coord, npc_uid, null, 40, 36, 41, 15, 5, 11, 5); // arrow
-// npc_projectile(coord, npc_uid, null, 40, 36, 32, 15, 0, 11, 5); // thrown
+// npc_projectile(coord, null, 40, 36, 41, 15, 5, 11, 5); // arrow
+// npc_projectile(coord, null, 40, 36, 32, 15, 0, 11, 5); // thrown
 // coord_projectile(coord, obj_coord, null, 35, 0, 48, 16, -2, 64, 10); // telegrab
-// npc_projectile(coord, npc_uid, null, 43, 31, 51, 16, -5, 64, 10); // wind
+// npc_projectile(coord, null, 43, 31, 51, 16, -5, 64, 10); // wind
 
-[proc,npc_projectile](coord $coord, npc_uid $uid, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
+[proc,npc_projectile](coord $coord, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
 def_int $flight = calc($length + (npc_range($coord) * $step));
 def_int $duration = calc($delay + $flight);
-projanim_npc($coord, $uid, $spotanim, $startheight, $endheight, $delay, $duration, $angle, $offset);
+projanim_npc($coord, $spotanim, $startheight, $endheight, $delay, $duration, $angle, $offset);
 return($duration);
 
-[proc,player_projectile](coord $coord, coord $coord2, player_uid $uid, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
-def_int $flight = calc($length + (distance($coord, $coord2) * $step));
+[proc,.npc_projectile](coord $coord, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
+def_int $flight = calc($length + (.npc_range($coord) * $step));
 def_int $duration = calc($delay + $flight);
-projanim_pl($coord, $uid, $spotanim, $startheight, $endheight, $delay, $duration, $angle, $offset);
+.projanim_npc($coord, $spotanim, $startheight, $endheight, $delay, $duration, $angle, $offset);
+return($duration);
+
+[proc,player_projectile](coord $coord, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
+def_int $flight = calc($length + (distance($coord, coord) * $step));
+def_int $duration = calc($delay + $flight);
+projanim_pl($coord, $spotanim, $startheight, $endheight, $delay, $duration, $angle, $offset);
+return($duration);
+
+[proc,.player_projectile](coord $coord, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
+def_int $flight = calc($length + (distance($coord, .coord) * $step));
+def_int $duration = calc($delay + $flight);
+.projanim_pl($coord, $spotanim, $startheight, $endheight, $delay, $duration, $angle, $offset);
 return($duration);
 
 [proc,coord_projectile](coord $coord, coord $coord2, spotanim $spotanim, int $startheight, int $endheight, int $delay, int $angle, int $length, int $offset, int $step)(int)
