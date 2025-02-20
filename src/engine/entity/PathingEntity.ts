@@ -15,6 +15,8 @@ import EntityLifeCycle from '#/engine/entity/EntityLifeCycle.js';
 import MoveStrategy from '#/engine/entity/MoveStrategy.js';
 import Obj from '#/engine/entity/Obj.js';
 import NonPathingEntity from '#/engine/entity/NonPathingEntity.js';
+import ScriptState from '#/engine/script/ScriptState.js';
+import ScriptRunner from '#/engine/script/ScriptRunner.js';
 
 import LocType from '#/cache/config/LocType.js';
 
@@ -62,7 +64,7 @@ export default abstract class PathingEntity extends Entity {
     walktrigger: number = -1;
     walktriggerArg: number = 0; // used for npcs
 
-    delayed: boolean = false;
+    suspendedScript: ScriptState | null = null;
     delayedUntil: number = -1;
     interacted: boolean = false;
     repathed: boolean = false;
@@ -586,6 +588,17 @@ export default abstract class PathingEntity extends Entity {
         this.targetSubject = { type: -1, com: -1 };
         this.apRange = 10;
         this.apRangeCalled = false;
+    }
+
+    delayed(): boolean {
+        return this.suspendedScript?.execution === ScriptState.DELAYED;
+    }
+
+    cancelSuspendedScript() {
+        if (this.suspendedScript !== null) {
+            ScriptRunner.cleanup(this.suspendedScript);
+            this.suspendedScript = null;
+        }
     }
 
     protected getCollisionStrategy(): CollisionType | null {

@@ -7,7 +7,6 @@ import ObjType from '#/cache/config/ObjType.js';
 import World from '#/engine/World.js';
 
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
-import ScriptPointer, { ActivePlayer, checkedHandler, ProtectedActivePlayer } from '#/engine/script/ScriptPointer.js';
 import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 import ScriptState from '#/engine/script/ScriptState.js';
@@ -58,9 +57,11 @@ import {
     SpotAnimTypeValid,
     StringNotNull,
     GenderValid,
-    SkinColourValid
+    SkinColourValid,
+    protectedAccessHandler
 } from '#/engine/script/ScriptValidators.js';
 import VarPlayerType from '#/cache/config/VarPlayerType.js';
+
 
 const PlayerOps: CommandHandlers = {
     [ScriptOpcode.FINDUID]: state => {
@@ -72,8 +73,8 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        state.activePlayer = player;
-        state.pointerAdd(ActivePlayer[state.intOperand]);
+        const primary = state.intOperand === 0;
+        state.setActivePlayer(primary, player);
         state.pushInt(1);
     },
 
@@ -82,8 +83,10 @@ const PlayerOps: CommandHandlers = {
         const uid = state.popInt() >>> 0;
         const player = World.getPlayerByUid(uid);
 
-        if (state.pointerGet(ProtectedActivePlayer[state.intOperand]) && state.activePlayer.uid === uid) {
-            // script is already running on this player with protected access, no-op
+        const primary = state.intOperand === 0;
+        const activePlayer = state.activePlayerOrNull(primary);
+        if (activePlayer?.uid === uid && activePlayer.protectedAccessScript === state) {
+            // script already has protected access of this player, no-op
             state.pushInt(1);
             return;
         }
@@ -93,14 +96,13 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        state.activePlayer = player;
-        state.pointerAdd(ActivePlayer[state.intOperand]);
-        state.pointerAdd(ProtectedActivePlayer[state.intOperand]);
+        state.setActivePlayer(primary, player);
+        player.protectedAccessScript = state;
         state.pushInt(1);
     },
 
     // https://x.com/JagexAsh/status/1698973910048403797
-    [ScriptOpcode.STRONGQUEUE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STRONGQUEUE]: state => {
         const args = popScriptArgs(state);
         const delay = check(state.popInt(), NumberNotNull);
         const scriptId = state.popInt();
@@ -109,11 +111,12 @@ const PlayerOps: CommandHandlers = {
         if (!script) {
             throw new Error(`Unable to find queue script: ${scriptId}`);
         }
-        state.activePlayer.enqueueScript(script, PlayerQueueType.STRONG, delay, args);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).enqueueScript(script, PlayerQueueType.STRONG, delay, args);
+    },
 
     // https://x.com/JagexAsh/status/1698973910048403797
-    [ScriptOpcode.WEAKQUEUE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.WEAKQUEUE]: state => {
         const args = popScriptArgs(state);
         const delay = check(state.popInt(), NumberNotNull);
         const scriptId = state.popInt();
@@ -122,12 +125,13 @@ const PlayerOps: CommandHandlers = {
         if (!script) {
             throw new Error(`Unable to find queue script: ${scriptId}`);
         }
-        state.activePlayer.enqueueScript(script, PlayerQueueType.WEAK, delay, args);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).enqueueScript(script, PlayerQueueType.WEAK, delay, args);
+    },
 
     // https://x.com/JagexAsh/status/1698973910048403797
     // https://x.com/JagexAsh/status/1821831590906859683
-    [ScriptOpcode.QUEUE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.QUEUE]: state => {
         const args = popScriptArgs(state);
         const delay = check(state.popInt(), NumberNotNull);
         const scriptId = state.popInt();
@@ -136,10 +140,11 @@ const PlayerOps: CommandHandlers = {
         if (!script) {
             throw new Error(`Unable to find queue script: ${scriptId}`);
         }
-        state.activePlayer.enqueueScript(script, PlayerQueueType.NORMAL, delay, args);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).enqueueScript(script, PlayerQueueType.NORMAL, delay, args);
+    },
 
-    [ScriptOpcode.LONGQUEUE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.LONGQUEUE]: state => {
         const args = popScriptArgs(state);
         const [scriptId, delay, logoutAction] = state.popInts(3);
 
@@ -148,72 +153,84 @@ const PlayerOps: CommandHandlers = {
             throw new Error(`Unable to find queue script: ${scriptId}`);
         }
 
-        state.activePlayer.enqueueScript(script, PlayerQueueType.LONG, delay, [logoutAction, ...args]);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).enqueueScript(script, PlayerQueueType.LONG, delay, [logoutAction, ...args]);
+    },
 
     // https://x.com/JagexAsh/status/1806246992797921391
-    [ScriptOpcode.ANIM]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.ANIM]: state => {
         const delay = state.popInt();
         const seq = state.popInt();
 
-        state.activePlayer.playAnimation(seq, delay);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).playAnimation(seq, delay);
+    },
 
     // https://x.com/JagexAsh/status/1694990340669747261
     // soft-limit for developers to be better aware of the bandwidth used and mitigate the impact on the player experience
-    [ScriptOpcode.BUFFER_FULL]: checkedHandler(ActivePlayer, state => {
-        state.pushInt(isBufferFull(state.activePlayer) ? 1 : 0);
-    }),
+    [ScriptOpcode.BUFFER_FULL]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(isBufferFull(state.activePlayer(primary)) ? 1 : 0);
+    },
 
-    [ScriptOpcode.BUILDAPPEARANCE]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.buildAppearance(check(state.popInt(), InvTypeValid).id);
-    }),
+    [ScriptOpcode.BUILDAPPEARANCE]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).buildAppearance(check(state.popInt(), InvTypeValid).id);
+    },
 
-    [ScriptOpcode.CAM_LOOKAT]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.CAM_LOOKAT]: state => {
         const [coord, height, rotationSpeed, rotationMultiplier] = state.popInts(4);
 
         const pos: CoordGrid = check(coord, CoordValid);
-        state.activePlayer.cameraPackets.addTail(new CameraInfo(ServerProt.CAM_LOOKAT, pos.x, pos.z, height, rotationSpeed, rotationMultiplier));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).cameraPackets.addTail(new CameraInfo(ServerProt.CAM_LOOKAT, pos.x, pos.z, height, rotationSpeed, rotationMultiplier));
+    },
 
-    [ScriptOpcode.CAM_MOVETO]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.CAM_MOVETO]: state => {
         const [coord, height, rotationSpeed, rotationMultiplier] = state.popInts(4);
 
         const pos: CoordGrid = check(coord, CoordValid);
-        state.activePlayer.cameraPackets.addTail(new CameraInfo(ServerProt.CAM_MOVETO, pos.x, pos.z, height, rotationSpeed, rotationMultiplier));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).cameraPackets.addTail(new CameraInfo(ServerProt.CAM_MOVETO, pos.x, pos.z, height, rotationSpeed, rotationMultiplier));
+    },
 
-    [ScriptOpcode.CAM_SHAKE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.CAM_SHAKE]: state => {
         const [type, jitter, amplitude, frequency] = state.popInts(4);
 
-        state.activePlayer.write(new CamShake(type, jitter, amplitude, frequency));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new CamShake(type, jitter, amplitude, frequency));
+    },
 
-    [ScriptOpcode.CAM_RESET]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.write(new CamReset());
-    }),
+    [ScriptOpcode.CAM_RESET]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new CamReset());
+    },
 
-    [ScriptOpcode.COORD]: checkedHandler(ActivePlayer, state => {
-        const coord: CoordGrid = state.activePlayer;
-        state.pushInt(CoordGrid.packCoord(coord.level, coord.x, coord.z));
-    }),
+    [ScriptOpcode.COORD]: state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+        state.pushInt(CoordGrid.packCoord(player.level, player.x, player.z));
+    },
 
-    [ScriptOpcode.DISPLAYNAME]: checkedHandler(ActivePlayer, state => {
-        state.pushString(state.activePlayer.displayName);
-    }),
+    [ScriptOpcode.DISPLAYNAME]: state => {
+        const primary = state.intOperand === 0;
+        state.pushString(state.activePlayer(primary).displayName);
+    },
 
-    [ScriptOpcode.FACESQUARE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.FACESQUARE]: state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
-        state.activePlayer.faceSquare(coord.x, coord.z);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).faceSquare(coord.x, coord.z);
+    },
 
-    [ScriptOpcode.IF_CLOSE]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.closeModal();
-    }),
+    [ScriptOpcode.IF_CLOSE]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).closeModal();
+    },
 
     [ScriptOpcode.LAST_COM]: state => {
-        state.pushInt(state.activePlayer.lastCom);
+        state.pushInt(state.activePlayer(true).lastCom);
     },
 
     // https://x.com/JagexAsh/status/1782377050021523947
@@ -241,7 +258,7 @@ const PlayerOps: CommandHandlers = {
             throw new Error('is not safe to use in this trigger');
         }
 
-        state.pushInt(state.activePlayer.lastItem);
+        state.pushInt(state.activePlayer(true).lastItem);
     },
 
     [ScriptOpcode.LAST_SLOT]: state => {
@@ -264,7 +281,7 @@ const PlayerOps: CommandHandlers = {
             throw new Error('is not safe to use in this trigger');
         }
 
-        state.pushInt(state.activePlayer.lastSlot);
+        state.pushInt(state.activePlayer(true).lastSlot);
     },
 
     [ScriptOpcode.LAST_USEITEM]: state => {
@@ -283,7 +300,7 @@ const PlayerOps: CommandHandlers = {
             throw new Error('is not safe to use in this trigger');
         }
 
-        state.pushInt(state.activePlayer.lastUseItem);
+        state.pushInt(state.activePlayer(true).lastUseItem);
     },
 
     [ScriptOpcode.LAST_USESLOT]: state => {
@@ -302,163 +319,203 @@ const PlayerOps: CommandHandlers = {
             throw new Error('is not safe to use in this trigger');
         }
 
-        state.pushInt(state.activePlayer.lastUseSlot);
+        state.pushInt(state.activePlayer(true).lastUseSlot);
     },
 
-    [ScriptOpcode.MES]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.MES]: state => {
         const message = state.popString();
 
-        state.activePlayer.messageGame(message);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).messageGame(message);
+    },
 
-    [ScriptOpcode.NAME]: checkedHandler(ActivePlayer, state => {
-        state.pushString(state.activePlayer.username);
-    }),
+    [ScriptOpcode.NAME]: state => {
+        const primary = state.intOperand === 0;
+        state.pushString(state.activePlayer(primary).username);
+    },
 
-    [ScriptOpcode.P_APRANGE]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.apRange = check(state.popInt(), NumberNotNull);
-        state.activePlayer.apRangeCalled = true;
+    [ScriptOpcode.P_APRANGE]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        player.apRange = check(state.popInt(), NumberNotNull);
+        player.apRangeCalled = true;
     }),
 
     // https://x.com/JagexAsh/status/1648254846686904321
-    [ScriptOpcode.P_ARRIVEDELAY]: checkedHandler(ProtectedActivePlayer, state => {
-        if (state.activePlayer.lastMovement < World.currentTick) {
+    [ScriptOpcode.P_ARRIVEDELAY]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        if (player.lastMovement < World.currentTick) {
             return;
         }
 
-        state.activePlayer.delayed = true;
-        state.activePlayer.delayedUntil = World.currentTick + 1;
-        state.execution = ScriptState.SUSPENDED;
+        player.suspendedScript = state;
+        player.delayedUntil = World.currentTick + 1;
+        state.execution = ScriptState.DELAYED;
+        state.corruptProtectedAccess(!primary);
     }),
 
-    [ScriptOpcode.P_COUNTDIALOG]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.write(new PCountDialog());
+    [ScriptOpcode.P_COUNTDIALOG]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        player.write(new PCountDialog());
+        player.suspendedScript = state;
         state.execution = ScriptState.COUNTDIALOG;
+        state.corruptProtectedAccess(!primary);
     }),
 
     // https://x.com/JagexAsh/status/1684478874703343616
     // https://x.com/JagexAsh/status/1780932943038345562
-    [ScriptOpcode.P_DELAY]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.delayed = true;
-        state.activePlayer.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
-        state.execution = ScriptState.SUSPENDED;
-    }),
+    [ScriptOpcode.P_DELAY]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
 
-    [ScriptOpcode.P_OPHELD]: checkedHandler(ProtectedActivePlayer, () => {
-        throw new Error('unimplemented');
+        player.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
+        player.suspendedScript = state;
+        state.execution = ScriptState.DELAYED;
+        state.corruptProtectedAccess(!primary);
     }),
 
     // https://x.com/JagexAsh/status/1791472651623370843
-    [ScriptOpcode.P_OPLOC]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_OPLOC]: protectedAccessHandler(state => {
         const type = check(state.popInt(), NumberNotNull) - 1;
         if (type < 0 || type >= 5) {
             throw new Error(`Invalid oploc: ${type + 1}`);
         }
-        const locType: LocType = LocType.get(state.activeLoc.type);
+
+        const loc = state.activeLoc(true);
+        const locType: LocType = LocType.get(loc.type);
         if (!locType.op || !locType.op[type]) {
             return;
         }
-        state.activePlayer.stopAction();
-        if (!state.activePlayer.inOperableDistance(state.activeLoc)) {
-            state.activePlayer.queueWaypoint(state.activeLoc.x, state.activeLoc.z);
+
+        const player = state.activePlayer(true);
+        player.stopAction();
+        if (!player.inOperableDistance(loc)) {
+            player.queueWaypoint(loc.x, loc.z);
         }
-        state.activePlayer.setInteraction(Interaction.SCRIPT, state.activeLoc, ServerTriggerType.APLOC1 + type);
+        player.setInteraction(Interaction.SCRIPT, loc, ServerTriggerType.APLOC1 + type);
     }),
 
     // https://x.com/JagexAsh/status/1791472651623370843
-    [ScriptOpcode.P_OPNPC]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_OPNPC]: protectedAccessHandler(state => {
         const type = check(state.popInt(), NumberNotNull) - 1;
         if (type < 0 || type >= 5) {
             throw new Error(`Invalid opnpc: ${type + 1}`);
         }
-        const npcType: NpcType = NpcType.get(state.activeNpc.type);
+
+        const npc = state.activeNpc(true);
+        const npcType: NpcType = NpcType.get(npc.type);
         if (!npcType.op || !npcType.op[type]) {
             return;
         }
-        state.activePlayer.stopAction();
-        state.activePlayer.setInteraction(Interaction.SCRIPT, state.activeNpc, ServerTriggerType.APNPC1 + type, { type: state.activeNpc.type, com: -1 });
+
+        const player = state.activePlayer(true);
+        player.stopAction();
+        player.setInteraction(Interaction.SCRIPT, npc, ServerTriggerType.APNPC1 + type, { type: npc.type, com: -1 });
     }),
 
     // https://x.com/JagexAsh/status/1791472651623370843
-    [ScriptOpcode.P_OPNPCT]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_OPNPCT]: protectedAccessHandler(state => {
         const spellId: number = check(state.popInt(), NumberNotNull);
-        state.activePlayer.stopAction();
-        state.activePlayer.setInteraction(Interaction.SCRIPT, state.activeNpc, ServerTriggerType.APNPCT, { type: state.activeNpc.type, com: spellId });
+
+        const npc = state.activeNpc(true);
+        const player = state.activePlayer(true);
+        player.stopAction();
+        player.setInteraction(Interaction.SCRIPT, npc, ServerTriggerType.APNPCT, { type: npc.type, com: spellId });
     }),
 
     // https://x.com/JagexAsh/status/1389465615631519744
-    [ScriptOpcode.P_PAUSEBUTTON]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_PAUSEBUTTON]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).suspendedScript = state;
         state.execution = ScriptState.PAUSEBUTTON;
+        state.corruptProtectedAccess(!primary);
     }),
 
     // https://x.com/JagexAsh/status/1780904271610867780
-    [ScriptOpcode.P_STOPACTION]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.stopAction();
+    [ScriptOpcode.P_STOPACTION]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).stopAction();
     }),
 
     // https://x.com/JagexAsh/status/1780230057023181259
-    [ScriptOpcode.P_CLEARPENDINGACTION]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.clearPendingAction();
+    [ScriptOpcode.P_CLEARPENDINGACTION]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).clearPendingAction();
     }),
 
     // https://x.com/JagexAsh/status/1697517518007541917
-    [ScriptOpcode.P_TELEJUMP]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_TELEJUMP]: protectedAccessHandler(state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
-        state.activePlayer.teleJump(coord.x, coord.z, coord.level);
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).teleJump(coord.x, coord.z, coord.level);
     }),
 
     // https://x.com/JagexAsh/status/1697517518007541917
     // https://x.com/JagexAsh/status/1790684996480442796
-    [ScriptOpcode.P_TELEPORT]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_TELEPORT]: protectedAccessHandler(state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
-        state.activePlayer.teleport(coord.x, coord.z, coord.level);
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).teleport(coord.x, coord.z, coord.level);
     }),
 
     // https://x.com/JagexAsh/status/1605130887292751873
     // https://x.com/JagexAsh/status/1698248664349614138
-    [ScriptOpcode.P_WALK]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_WALK]: protectedAccessHandler(state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
-        const player = state.activePlayer;
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
         player.queueWaypoints(findPath(player.level, player.x, player.z, coord.x, coord.z));
     }),
 
-    [ScriptOpcode.SAY]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.say(state.popString());
-    }),
+    [ScriptOpcode.SAY]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).say(state.popString());
+    },
 
-    [ScriptOpcode.SOUND_SYNTH]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.SOUND_SYNTH]: state => {
         const [synth, loops, delay] = state.popInts(3);
 
-        state.activePlayer.write(new SynthSound(synth, loops, delay));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new SynthSound(synth, loops, delay));
+    },
 
-    [ScriptOpcode.STAFFMODLEVEL]: checkedHandler(ActivePlayer, state => {
-        state.pushInt(state.activePlayer.staffModLevel);
-    }),
+    [ScriptOpcode.STAFFMODLEVEL]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).staffModLevel);
+    },
 
-    [ScriptOpcode.STAT]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STAT]: state => {
         const stat: PlayerStat = check(state.popInt(), PlayerStatValid);
 
-        state.pushInt(state.activePlayer.levels[stat]);
-    }),
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).levels[stat]);
+    },
 
-    [ScriptOpcode.STAT_BASE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STAT_BASE]: state => {
         const stat: PlayerStat = check(state.popInt(), PlayerStatValid);
 
-        state.pushInt(state.activePlayer.baseLevels[stat]);
-    }),
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).baseLevels[stat]);
+    },
 
-    [ScriptOpcode.STAT_ADD]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STAT_ADD]: state => {
         const [stat, constant, percent] = state.popInts(3);
 
         check(stat, PlayerStatValid);
         check(constant, NumberNotNull);
         check(percent, NumberNotNull);
 
-        const player = state.activePlayer;
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         const current = player.levels[stat];
         const added = current + (constant + (current * percent) / 100);
         player.levels[stat] = Math.min(added, 255);
@@ -468,40 +525,45 @@ const PlayerOps: CommandHandlers = {
         if (added !== current) {
             player.changeStat(stat);
         }
-    }),
+    },
 
-    [ScriptOpcode.STAT_SUB]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STAT_SUB]: state => {
         const [stat, constant, percent] = state.popInts(3);
 
         check(stat, PlayerStatValid);
         check(constant, NumberNotNull);
         check(percent, NumberNotNull);
 
-        const player = state.activePlayer;
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         const current = player.levels[stat];
         const subbed = current - (constant + (current * percent) / 100);
         player.levels[stat] = Math.max(subbed, 0);
         if (subbed !== current) {
             player.changeStat(stat);
         }
-    }),
+    },
 
-    [ScriptOpcode.SPOTANIM_PL]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.SPOTANIM_PL]: state => {
         const delay = check(state.popInt(), NumberNotNull);
         const height = state.popInt();
         const spotanimType: SpotanimType = check(state.popInt(), SpotAnimTypeValid);
 
-        state.activePlayer.spotanim(spotanimType.id, height, delay);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).spotanim(spotanimType.id, height, delay);
+    },
 
-    [ScriptOpcode.STAT_HEAL]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STAT_HEAL]: state => {
         const [stat, constant, percent] = state.popInts(3);
 
         check(stat, PlayerStatValid);
         check(constant, NumberNotNull);
         check(percent, NumberNotNull);
 
-        const player = state.activePlayer;
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         const base = player.baseLevels[stat];
         const current = player.levels[stat];
         const healed = current + (constant + (current * percent) / 100);
@@ -514,89 +576,102 @@ const PlayerOps: CommandHandlers = {
         if (healed !== current) {
             player.changeStat(stat);
         }
+    },
+
+    [ScriptOpcode.UID]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).uid);
+    },
+
+    [ScriptOpcode.P_LOGOUT]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).requestLogout = true;
     }),
 
-    [ScriptOpcode.UID]: checkedHandler(ActivePlayer, state => {
-        state.pushInt(state.activePlayer.uid);
-    }),
+    [ScriptOpcode.P_PREVENTLOGOUT]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
 
-    [ScriptOpcode.P_LOGOUT]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.requestLogout = true;
-    }),
-
-    [ScriptOpcode.P_PREVENTLOGOUT]: checkedHandler(ProtectedActivePlayer, state => {
         // a short antilog can overwrite a long one in osrs, so no checks here
-        state.activePlayer.preventLogoutMessage = check(state.popString(), StringNotNull);
-        state.activePlayer.preventLogoutUntil = World.currentTick + check(state.popInt(), NumberNotNull);
+        player.preventLogoutMessage = check(state.popString(), StringNotNull);
+        player.preventLogoutUntil = World.currentTick + check(state.popInt(), NumberNotNull);
     }),
 
-    [ScriptOpcode.IF_SETCOLOUR]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETCOLOUR]: state => {
         const [com, colour] = state.popInts(2);
 
         check(com, NumberNotNull);
         check(colour, NumberNotNull);
 
-        state.activePlayer.write(new IfSetColour(com, ColorConversion.rgb24to15(colour)));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetColour(com, ColorConversion.rgb24to15(colour)));
+    },
 
-    [ScriptOpcode.IF_OPENCHAT]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.openChat(check(state.popInt(), NumberNotNull));
-    }),
+    [ScriptOpcode.IF_OPENCHAT]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).openChat(check(state.popInt(), NumberNotNull));
+    },
 
-    [ScriptOpcode.IF_OPENMAIN_SIDE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_OPENMAIN_SIDE]: state => {
         const [main, side] = state.popInts(2);
 
         check(main, NumberNotNull);
         check(side, NumberNotNull);
 
-        state.activePlayer.openMainModalSide(main, side);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).openMainModalSide(main, side);
+    },
 
-    [ScriptOpcode.IF_SETHIDE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETHIDE]: state => {
         const [com, hide] = state.popInts(2);
 
         check(com, NumberNotNull);
         check(hide, NumberNotNull);
 
-        state.activePlayer.write(new IfSetHide(com, hide === 1));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetHide(com, hide === 1));
+    },
 
-    [ScriptOpcode.IF_SETOBJECT]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETOBJECT]: state => {
         const [com, obj, scale] = state.popInts(3);
 
         check(com, NumberNotNull);
         check(obj, ObjTypeValid);
         check(scale, NumberNotNull);
 
-        state.activePlayer.write(new IfSetObject(com, obj, scale));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetObject(com, obj, scale));
+    },
 
-    [ScriptOpcode.IF_SETTABACTIVE]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.write(new IfSetTabActive(check(state.popInt(), NumberNotNull)));
-    }),
+    [ScriptOpcode.IF_SETTABACTIVE]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetTabActive(check(state.popInt(), NumberNotNull)));
+    },
 
-    [ScriptOpcode.IF_SETMODEL]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETMODEL]: state => {
         const [com, model] = state.popInts(2);
 
         check(com, NumberNotNull);
         check(model, NumberNotNull);
 
-        state.activePlayer.write(new IfSetModel(com, model));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetModel(com, model));
+    },
 
-    [ScriptOpcode.IF_SETRECOL]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETRECOL]: state => {
         const [com, src, dest] = state.popInts(3);
 
         check(com, NumberNotNull);
 
-        state.activePlayer.write(new IfSetRecol(com, src, dest));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetRecol(com, src, dest));
+    },
 
-    [ScriptOpcode.TUT_FLASH]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.write(new TutFlash(check(state.popInt(), NumberNotNull)));
-    }),
+    [ScriptOpcode.TUT_FLASH]: state => {
+        state.activePlayer(true).write(new TutFlash(check(state.popInt(), NumberNotNull)));
+    },
 
-    [ScriptOpcode.IF_SETANIM]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETANIM]: state => {
         const [com, seq] = state.popInts(2);
 
         check(com, NumberNotNull);
@@ -606,105 +681,115 @@ const PlayerOps: CommandHandlers = {
             return;
         }
 
-        state.activePlayer.write(new IfSetAnim(com, seq));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetAnim(com, seq));
+    },
 
-    [ScriptOpcode.IF_SETTAB]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETTAB]: state => {
         const [com, tab] = state.popInts(2);
 
         check(tab, NumberNotNull);
 
-        state.activePlayer.setTab(com, tab);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).setTab(com, tab);
+    },
 
-    [ScriptOpcode.IF_OPENMAIN]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.openMainModal(check(state.popInt(), NumberNotNull));
-    }),
+    [ScriptOpcode.IF_OPENMAIN]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).openMainModal(check(state.popInt(), NumberNotNull));
+    },
 
-    [ScriptOpcode.TUT_OPEN]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.openTutorial(check(state.popInt(), NumberNotNull));
-    }),
+    [ScriptOpcode.TUT_OPEN]: state => {
+        state.activePlayer(true).openTutorial(check(state.popInt(), NumberNotNull));
+    },
 
-    [ScriptOpcode.IF_OPENSIDE]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.openSideModal(check(state.popInt(), NumberNotNull));
-    }),
+    [ScriptOpcode.IF_OPENSIDE]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).openSideModal(check(state.popInt(), NumberNotNull));
+    },
 
-    [ScriptOpcode.IF_SETPLAYERHEAD]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.write(new IfSetPlayerHead(check(state.popInt(), NumberNotNull)));
-    }),
+    [ScriptOpcode.IF_SETPLAYERHEAD]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetPlayerHead(check(state.popInt(), NumberNotNull)));
+    },
 
-    [ScriptOpcode.IF_SETTEXT]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETTEXT]: state => {
         const text = state.popString();
         const com = check(state.popInt(), NumberNotNull);
 
-        state.activePlayer.write(new IfSetText(com, text));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetText(com, text));
+    },
 
-    [ScriptOpcode.IF_SETNPCHEAD]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETNPCHEAD]: state => {
         const [com, npc] = state.popInts(2);
 
         check(com, NumberNotNull);
         check(npc, NpcTypeValid);
 
-        state.activePlayer.write(new IfSetNpcHead(com, npc));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetNpcHead(com, npc));
+    },
 
-    [ScriptOpcode.IF_SETPOSITION]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETPOSITION]: state => {
         const [com, x, y] = state.popInts(3);
 
         check(com, NumberNotNull);
 
-        state.activePlayer.write(new IfSetPosition(com, x, y));
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).write(new IfSetPosition(com, x, y));
+    },
 
-    [ScriptOpcode.STAT_ADVANCE]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.STAT_ADVANCE]: state => {
         const [stat, xp] = state.popInts(2);
 
         check(stat, NumberNotNull);
         check(xp, NumberNotNull);
 
-        state.activePlayer.addXp(stat, xp);
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).addXp(stat, xp);
+    },
 
     [ScriptOpcode.DAMAGE]: state => {
         const amount = check(state.popInt(), NumberNotNull);
         const type = check(state.popInt(), HitTypeValid);
-        const uid = check(state.popInt(), NumberNotNull);
 
-        const player = World.getPlayerByUid(uid);
-        if (!player) {
-            return;
-        }
-
-        player.applyDamage(amount, type);
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).applyDamage(amount, type);
     },
 
-    [ScriptOpcode.IF_SETRESUMEBUTTONS]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.IF_SETRESUMEBUTTONS]: state => {
         const [button1, button2, button3, button4, button5] = state.popInts(5);
 
-        state.activePlayer.resumeButtons = [button1, button2, button3, button4, button5];
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).resumeButtons = [button1, button2, button3, button4, button5];
+    },
 
-    [ScriptOpcode.TEXT_GENDER]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.TEXT_GENDER]: state => {
         const [male, female] = state.popStrings(2);
-        if (state.activePlayer.gender == 0) {
+
+        const primary = state.intOperand === 0;
+        if (state.activePlayer(primary).gender === 0) {
             state.pushString(male);
         } else {
             state.pushString(female);
         }
-    }),
+    },
 
     [ScriptOpcode.MIDI_SONG]: state => {
-        state.activePlayer.playSong(check(state.popString(), StringNotNull));
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).playSong(check(state.popString(), StringNotNull));
     },
 
     [ScriptOpcode.MIDI_JINGLE]: state => {
         const delay = check(state.popInt(), NumberNotNull);
         const name = check(state.popString(), StringNotNull);
-        state.activePlayer.playJingle(delay, name);
+
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).playJingle(delay, name);
     },
 
-    [ScriptOpcode.SOFTTIMER]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.SOFTTIMER]: state => {
         const args = popScriptArgs(state);
         const interval = state.popInt();
         const timerId = state.popInt();
@@ -713,14 +798,17 @@ const PlayerOps: CommandHandlers = {
         if (!script) {
             throw new Error(`Unable to find timer script: ${timerId}`);
         }
-        state.activePlayer.setTimer(PlayerTimerType.SOFT, script, args, interval);
-    }),
 
-    [ScriptOpcode.CLEARSOFTTIMER]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.clearTimer(state.popInt());
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).setTimer(PlayerTimerType.SOFT, script, args, interval);
+    },
 
-    [ScriptOpcode.SETTIMER]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.CLEARSOFTTIMER]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).clearTimer(state.popInt());
+    },
+
+    [ScriptOpcode.SETTIMER]: state => {
         const args = popScriptArgs(state);
         const interval = state.popInt();
         const timerId = state.popInt();
@@ -729,21 +817,25 @@ const PlayerOps: CommandHandlers = {
         if (!script) {
             throw new Error(`Unable to find timer script: ${timerId}`);
         }
-        state.activePlayer.setTimer(PlayerTimerType.NORMAL, script, args, interval);
-    }),
 
-    [ScriptOpcode.CLEARTIMER]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.clearTimer(state.popInt());
-    }),
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).setTimer(PlayerTimerType.NORMAL, script, args, interval);
+    },
 
-    [ScriptOpcode.GETTIMER]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.CLEARTIMER]: state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).clearTimer(state.popInt());
+    },
+
+    [ScriptOpcode.GETTIMER]: state => {
         const timerId = state.popInt();
         const script = ScriptProvider.get(timerId);
         if (!script) {
             throw new Error(`Unable to find timer script: ${timerId}`);
         }
 
-        for (const timer of state.activePlayer.timers.values()) {
+        const primary = state.intOperand === 0;
+        for (const timer of state.activePlayer(primary).timers.values()) {
             if (timer.script.id === timerId) {
                 state.pushInt(timer.clock);
                 return;
@@ -751,55 +843,69 @@ const PlayerOps: CommandHandlers = {
         }
 
         state.pushInt(-1);
-    }),
+    },
 
     [ScriptOpcode.HINT_COORD]: state => {
         const [offset, coord, height] = state.popInts(3);
 
         const position: CoordGrid = check(coord, CoordValid);
-        state.activePlayer.hintTile(offset, position.x, position.z, height);
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).hintTile(offset, position.x, position.z, height);
     },
 
     [ScriptOpcode.HINT_STOP]: state => {
-        state.activePlayer.stopHint();
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).stopHint();
     },
 
     [ScriptOpcode.TUT_CLOSE]: state => {
-        state.activePlayer.closeTutorial();
+        state.activePlayer(true).closeTutorial();
     },
 
     // https://x.com/JagexAsh/status/1684174294086033410
-    [ScriptOpcode.P_EXACTMOVE]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_EXACTMOVE]: protectedAccessHandler(state => {
         const [start, end, startCycle, endCycle, direction] = state.popInts(5);
 
         const startPos: CoordGrid = check(start, CoordValid);
         const endPos: CoordGrid = check(end, CoordValid);
 
-        state.activePlayer.unsetMapFlag();
-        state.activePlayer.exactMove(startPos.x, startPos.z, endPos.x, endPos.z, startCycle, endCycle, direction);
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        player.unsetMapFlag();
+        player.exactMove(startPos.x, startPos.z, endPos.x, endPos.z, startCycle, endCycle, direction);
     }),
 
     // https://x.com/JagexAsh/status/1653407769989349377
     [ScriptOpcode.BUSY]: state => {
-        state.pushInt(state.activePlayer.busy() || state.activePlayer.loggingOut ? 1 : 0);
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        state.pushInt(!player.canAccess() || player.loggingOut ? 1 : 0);
     },
 
     // https://x.com/JagexAsh/status/1791053667228856563
     [ScriptOpcode.BUSY2]: state => {
-        state.pushInt(state.activePlayer.hasInteraction() || state.activePlayer.hasWaypoints() ? 1 : 0);
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        state.pushInt(player.hasInteraction() || player.hasWaypoints() ? 1 : 0);
     },
 
     // https://x.com/JagexAsh/status/1821831590906859683
     [ScriptOpcode.GETQUEUE]: state => {
         const scriptId = state.popInt();
 
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         let count: number = 0;
-        for (let request = state.activePlayer.queue.head(); request !== null; request = state.activePlayer.queue.next()) {
+        for (let request = player.queue.head(); request !== null; request = player.queue.next()) {
             if (request.script.id === scriptId) {
                 count++;
             }
         }
-        for (let request = state.activePlayer.weakQueue.head(); request !== null; request = state.activePlayer.weakQueue.next()) {
+        for (let request = player.weakQueue.head(); request !== null; request = player.weakQueue.next()) {
             if (request.script.id === scriptId) {
                 count++;
             }
@@ -808,115 +914,129 @@ const PlayerOps: CommandHandlers = {
     },
 
     // https://x.com/JagexAsh/status/1684232225397657602
-    // TODO: check active loc too
-    [ScriptOpcode.P_LOCMERGE]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_LOCMERGE]: protectedAccessHandler(state => {
         const [startCycle, endCycle, southEast, northWest] = state.popInts(4);
 
         const se: CoordGrid = check(southEast, CoordValid);
         const nw: CoordGrid = check(northWest, CoordValid);
 
-        World.mergeLoc(state.activeLoc, state.activePlayer, startCycle, endCycle, se.z, se.x, nw.z, nw.x);
+        const primary = state.intOperand === 0;
+        World.mergeLoc(state.activeLoc(true), state.activePlayer(primary), startCycle, endCycle, se.z, se.x, nw.z, nw.x);
     }),
 
     [ScriptOpcode.LAST_LOGIN_INFO]: state => {
         // proxying websockets through cf may show IPv6 and breaks anyways
         // so we just hardcode 127.0.0.1 (2130706433)
 
-        state.activePlayer.lastLoginInfo(2130706433, 0, 201, 0);
+        state.activePlayer(true).lastLoginInfo(2130706433, 0, 201, 0);
     },
 
     [ScriptOpcode.BAS_READYANIM]: state => {
-        state.activePlayer.basReadyAnim = check(state.popInt(), SeqTypeValid).id;
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).basReadyAnim = check(state.popInt(), SeqTypeValid).id;
     },
 
     [ScriptOpcode.BAS_TURNONSPOT]: state => {
-        state.activePlayer.basTurnOnSpot = check(state.popInt(), SeqTypeValid).id;
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).basTurnOnSpot = check(state.popInt(), SeqTypeValid).id;
     },
 
     [ScriptOpcode.BAS_WALK_F]: state => {
-        state.activePlayer.basWalkForward = check(state.popInt(), SeqTypeValid).id;
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).basWalkForward = check(state.popInt(), SeqTypeValid).id;
     },
 
     [ScriptOpcode.BAS_WALK_B]: state => {
-        state.activePlayer.basWalkBackward = check(state.popInt(), SeqTypeValid).id;
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).basWalkBackward = check(state.popInt(), SeqTypeValid).id;
     },
 
     [ScriptOpcode.BAS_WALK_L]: state => {
-        state.activePlayer.basWalkLeft = check(state.popInt(), SeqTypeValid).id;
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).basWalkLeft = check(state.popInt(), SeqTypeValid).id;
     },
 
     [ScriptOpcode.BAS_WALK_R]: state => {
-        state.activePlayer.basWalkRight = check(state.popInt(), SeqTypeValid).id;
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).basWalkRight = check(state.popInt(), SeqTypeValid).id;
     },
 
     [ScriptOpcode.BAS_RUNNING]: state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         const seq = state.popInt();
         if (seq === -1) {
-            state.activePlayer.basRunning = -1;
+            player.basRunning = -1;
             return;
         }
-        state.activePlayer.basRunning = check(seq, SeqTypeValid).id;
+        player.basRunning = check(seq, SeqTypeValid).id;
     },
 
     [ScriptOpcode.GENDER]: state => {
-        state.pushInt(state.activePlayer.gender);
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).gender);
     },
 
     [ScriptOpcode.HINT_NPC]: state => {
-        state.activePlayer.hintNpc(check(state.popInt(), NumberNotNull));
+        state.activePlayer(true).hintNpc(state.activeNpc(true).nid);
     },
 
     [ScriptOpcode.HINT_PLAYER]: state => {
-        const uid = check(state.popInt(), NumberNotNull);
-        const player = World.getPlayerByUid(uid);
-        if (!player) {
-            return;
-        }
-        state.activePlayer.hintPlayer(player.pid);
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+        const target = state.activePlayer(!primary);
+
+        player.hintPlayer(target.pid);
     },
 
     [ScriptOpcode.HEADICONS_GET]: state => {
-        state.pushInt(state.activePlayer.headicons);
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).headicons);
     },
 
     [ScriptOpcode.HEADICONS_SET]: state => {
-        state.activePlayer.headicons = check(state.popInt(), NumberNotNull);
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).headicons = check(state.popInt(), NumberNotNull);
     },
 
     // https://x.com/JagexAsh/status/1791472651623370843
     // https://x.com/JagexAsh/status/1790684996480442796
-    [ScriptOpcode.P_OPOBJ]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_OPOBJ]: protectedAccessHandler(state => {
         const type = check(state.popInt(), NumberNotNull) - 1;
         if (type < 0 || type >= 5) {
             throw new Error(`Invalid opobj: ${type + 1}`);
         }
-        const objType: ObjType = ObjType.get(state.activeObj.type);
+        const obj = state.activeObj(true);
+        const objType: ObjType = ObjType.get(obj.type);
         if (!objType.op || !objType.op[type]) {
             return;
         }
-        state.activePlayer.stopAction();
 
+        const player = state.activePlayer(true);
+        player.stopAction();
         // Sets player destination naively to the Obj's coordinate
-        state.activePlayer.queueWaypoint(state.activeObj.x, state.activeObj.z);
-        state.activePlayer.setInteraction(Interaction.SCRIPT, state.activeObj, ServerTriggerType.APOBJ1 + type);
+        player.queueWaypoint(obj.x, obj.z);
+        player.setInteraction(Interaction.SCRIPT, obj, ServerTriggerType.APOBJ1 + type);
     }),
 
     // https://x.com/JagexAsh/status/1791472651623370843
-    [ScriptOpcode.P_OPPLAYER]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_OPPLAYER]: protectedAccessHandler(state => {
         const type = check(state.popInt(), NumberNotNull) - 1;
         if (type < 0 || type >= 5) {
             throw new Error(`Invalid opplayer: ${type + 1}`);
         }
-        const target = state._activePlayer2;
-        if (!target) {
-            return;
-        }
-        state.activePlayer.stopAction();
-        state.activePlayer.setInteraction(Interaction.SCRIPT, target, ServerTriggerType.APPLAYER1 + type);
+
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+        const target = state.activePlayer(!primary);
+
+        player.stopAction();
+        player.setInteraction(Interaction.SCRIPT, target, ServerTriggerType.APPLAYER1 + type);
     }),
 
     [ScriptOpcode.ALLOWDESIGN]: state => {
-        state.activePlayer.allowDesign = check(state.popInt(), NumberNotNull) === 1;
+        state.activePlayer(true).allowDesign = check(state.popInt(), NumberNotNull) === 1;
     },
 
     [ScriptOpcode.LAST_TARGETSLOT]: state => {
@@ -925,38 +1045,44 @@ const PlayerOps: CommandHandlers = {
             throw new Error('is not safe to use in this trigger');
         }
 
-        state.pushInt(state.activePlayer.lastTargetSlot);
+        state.pushInt(state.activePlayer(true).lastTargetSlot);
     },
 
     [ScriptOpcode.WALKTRIGGER]: state => {
-        state.activePlayer.walktrigger = state.popInt();
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).walktrigger = state.popInt();
     },
 
     // https://x.com/JagexAsh/status/1779778790593372205
     [ScriptOpcode.GETWALKTRIGGER]: state => {
-        state.pushInt(state.activePlayer.walktrigger);
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).walktrigger);
     },
 
     // https://x.com/JagexAsh/status/1821831590906859683
     [ScriptOpcode.CLEARQUEUE]: state => {
         const scriptId = state.popInt();
-        state.activePlayer.unlinkQueuedScript(scriptId);
+
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).unlinkQueuedScript(scriptId);
     },
 
     [ScriptOpcode.HEALENERGY]: state => {
         const amount = check(state.popInt(), NumberNotNull); // 100=1%, 1000=10%, 10000=100%
 
-        const player = state.activePlayer;
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
         player.runenergy = Math.min(Math.max(player.runenergy + amount, 0), 10000);
     },
 
     [ScriptOpcode.AFK_EVENT]: state => {
-        state.pushInt(state.activePlayer.afkEventReady ? 1 : 0);
-        state.activePlayer.afkEventReady = false;
+        const player = state.activePlayer(true);
+        state.pushInt(player.afkEventReady ? 1 : 0);
+        player.afkEventReady = false;
     },
 
     [ScriptOpcode.LOWMEMORY]: state => {
-        state.pushInt(state.activePlayer.lowMemory ? 1 : 0);
+        state.pushInt(state.activePlayer(true).lowMemory ? 1 : 0);
     },
 
     [ScriptOpcode.SETIDKIT]: state => {
@@ -964,11 +1090,14 @@ const PlayerOps: CommandHandlers = {
 
         const idkType: IdkType = check(idkit, IDKTypeValid);
 
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         let slot = idkType.type;
-        if (state.activePlayer.gender === 1) {
+        if (player.gender === 1) {
             slot -= 7;
         }
-        state.activePlayer.body[slot] = idkType.id;
+        player.body[slot] = idkType.id;
 
         // 0 - hair/jaw
         // 1 - torso
@@ -976,7 +1105,7 @@ const PlayerOps: CommandHandlers = {
         // 3 - boots
         // 4 - skin
         let type = idkType.type;
-        if (state.activePlayer.gender === 1) {
+        if (player.gender === 1) {
             type -= 7;
         }
         let colorSlot = -1;
@@ -993,46 +1122,54 @@ const PlayerOps: CommandHandlers = {
         }
 
         if (colorSlot !== -1) {
-            state.activePlayer.colors[colorSlot] = color;
+            player.colors[colorSlot] = color;
         }
     },
 
     [ScriptOpcode.SETGENDER]: state => {
         const gender = check(state.popInt(), GenderValid);
+
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
         // convert idkit, have to use a mapping cause order + there's not always an equivalence
         for (let i = 0; i < 7; i++) {
             if (gender === 1) {
-                state.activePlayer.body[i] = Player.MALE_FEMALE_MAP.get(state.activePlayer.body[i]) ?? -1;
+                player.body[i] = Player.MALE_FEMALE_MAP.get(player.body[i]) ?? -1;
             } else {
                 if (i == 1) {
-                    state.activePlayer.body[i] = 14;
+                    player.body[i] = 14;
                     continue;
                 }
-                state.activePlayer.body[i] = Player.FEMALE_MALE_MAP.get(state.activePlayer.body[i]) ?? -1;
+                player.body[i] = Player.FEMALE_MALE_MAP.get(player.body[i]) ?? -1;
             }
         }
-        state.activePlayer.gender = gender;
+        player.gender = gender;
     },
 
     [ScriptOpcode.SETSKINCOLOUR]: state => {
         const skin = check(state.popInt(), SkinColourValid);
-        state.activePlayer.colors[4] = skin;
+
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).colors[4] = skin;
     },
 
     // https://x.com/JagexAsh/status/1791472651623370843
-    [ScriptOpcode.P_OPPLAYERT]: checkedHandler(ProtectedActivePlayer, state => {
+    [ScriptOpcode.P_OPPLAYERT]: protectedAccessHandler(state => {
         const spellId = check(state.popInt(), NumberNotNull);
-        const target = state._activePlayer2;
-        if (!target) {
-            return;
-        }
-        state.activePlayer.stopAction();
-        state.activePlayer.setInteraction(Interaction.SCRIPT, target, ServerTriggerType.APPLAYERT, { type: -1, com: spellId });
+
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+        const target = state.activePlayer(!primary);
+
+        player.stopAction();
+        player.setInteraction(Interaction.SCRIPT, target, ServerTriggerType.APPLAYERT, { type: -1, com: spellId });
     }),
 
     // https://x.com/JagexAsh/status/1799020087086903511
-    [ScriptOpcode.FINDHERO]: checkedHandler(ActivePlayer, state => {
-        const uid = state.activePlayer.heroPoints.findHero();
+    [ScriptOpcode.FINDHERO]: state => {
+        const primary = state.intOperand === 0;
+        const uid = state.activePlayer(primary).heroPoints.findHero();
         if (uid === -1) {
             state.pushInt(0);
             return;
@@ -1043,59 +1180,58 @@ const PlayerOps: CommandHandlers = {
             state.pushInt(0);
             return;
         }
-        state._activePlayer2 = player;
-        state.pointerAdd(ScriptPointer.ActivePlayer2);
+        state.setActivePlayer(!primary, player);
         state.pushInt(1);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1799020087086903511
-    [ScriptOpcode.BOTH_HEROPOINTS]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.BOTH_HEROPOINTS]: state => {
         const damage: number = check(state.popInt(), NumberNotNull);
-        const secondary: boolean = state.intOperand === 1;
 
-        const fromPlayer: Player | null = secondary ? state._activePlayer2 : state._activePlayer;
-        const toPlayer: Player | null = secondary ? state._activePlayer : state._activePlayer2;
-
-        if (!fromPlayer || !toPlayer) {
-            throw new Error('player is null');
-        }
+        const primary = state.intOperand === 0;
+        const fromPlayer = state.activePlayer(primary);
+        const toPlayer = state.activePlayer(!primary);
 
         toPlayer.heroPoints.addHero(fromPlayer.uid, damage);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1806246992797921391
-    [ScriptOpcode.P_ANIMPROTECT]: checkedHandler(ProtectedActivePlayer, state => {
-        state.activePlayer.animProtect = check(state.popInt(), NumberNotNull);
+    [ScriptOpcode.P_ANIMPROTECT]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        state.activePlayer(primary).animProtect = check(state.popInt(), NumberNotNull);
     }),
 
-    [ScriptOpcode.RUNENERGY]: checkedHandler(ActivePlayer, state => {
-        const player = state.activePlayer;
-        state.pushInt(player.runenergy);
-    }),
+    [ScriptOpcode.RUNENERGY]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).runenergy);
+    },
 
-    [ScriptOpcode.WEIGHT]: checkedHandler(ProtectedActivePlayer, state => {
-        state.pushInt(state.activePlayer.runweight);
-    }),
+    [ScriptOpcode.WEIGHT]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(state.activePlayer(primary).runweight);
+    },
 
-    [ScriptOpcode.SESSION_LOG]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.SESSION_LOG]: state => {
         const eventType = state.popInt() + 2;
         const event = state.popString();
 
-        state.activePlayer.addSessionLog(eventType, event);
-    }),
+        state.activePlayer(true).addSessionLog(eventType, event);
+    },
 
-    [ScriptOpcode.WEALTH_LOG]: checkedHandler(ActivePlayer, state => {
+    [ScriptOpcode.WEALTH_LOG]: state => {
         const [isGained, amount] = state.popInts(2);
         const event = state.popString();
 
-        state.activePlayer.addWealthLog(isGained ? amount : -amount, event);
-    }),
+        state.activePlayer(true).addWealthLog(isGained ? amount : -amount, event);
+    },
 
-    [ScriptOpcode.P_RUN]: checkedHandler(ActivePlayer, state => {
-        state.activePlayer.run = state.popInt();
+    [ScriptOpcode.P_RUN]: protectedAccessHandler(state => {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
 
+        player.run = state.popInt();
         // todo: better way to sync engine varp
-        state.activePlayer.setVar(VarPlayerType.RUN, state.activePlayer.run);
+        player.setVar(VarPlayerType.RUN, player.run);
     })
 };
 

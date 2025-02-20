@@ -23,7 +23,6 @@
 [command,.npc_huntnext]()(boolean)
 // Returns true if $pos is in the area between $from and $to
 [command,inzone](coord $from, coord $to, coord $pos)(boolean)
-[command,.inzone](coord $from, coord $to, coord $pos)(boolean) // todo: replace all instances of this with inzone, should not have secondary
 // Returns true if $from has an unbroken line-of-walk to $to
 [command,lineofwalk](coord $from, coord $to)(boolean)
 // Roll a skill success check
@@ -65,22 +64,16 @@
 [command,lineofsight](coord $from, coord $to)(boolean)
 // Delay this script for $delay ticks on the world, not tied to any player/npc
 [command,world_delay](int $delay)
-// Cast a projectile targeting a player
-[command,projanim_pl](coord $from, player_uid $to, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
-// Cast a projectile targeting a npc
-[command,projanim_npc](coord $from, npc_uid $to, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
+// Cast a projectile targeting the player
+[command,projanim_pl](coord $from, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
+[command,.projanim_pl](coord $from, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
+// Cast a projectile targeting the npc
+[command,projanim_npc](coord $from, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
+[command,.projanim_npc](coord $from, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
 // Cast a projectile targeting a coord
 [command,projanim_map](coord $from, coord $to, spotanim $spotanim, int $fromHeight, int $toHeight, int $delay, int $duration, int $peak, int $arc)
 // Returns true if it's unsafe to spawn a loc on this tile
 [command,map_locaddunsafe](coord $coord)(boolean)
-// Get the number of npcs in the world
-[command,npccount]()(int) // todo: move this to debug ops
-// Get the number of zones in the world
-[command,zonecount]()(int) // todo: move this to debug ops
-// Get the number of objects in the world
-[command,loccount]()(int) // todo: move this to debug ops
-// Get the number of locs in the world
-[command,objcount]()(int) // todo: move this to debug ops
 // Get a random coord centered on $coord within $minradius and $maxradius, using ^map_findsquare_ constants for $type
 [command,map_findsquare](coord $coord, int $minradius, int $maxradius, int $type)(coord)
 // Returns true if the map tile at $coord is in a multi-way combat area
@@ -95,22 +88,28 @@
 [command,.p_finduid](player_uid $player)(boolean)
 // Strong-queue a script on a player (do not use in early 2004)
 [command,strongqueue](queue $queue, int $delay)
+[command,.strongqueue](queue $queue, int $delay)
 // Weak-queue a script on a player (do not use in early 2004)
 [command,weakqueue](queue $queue, int $delay)
+[command,.weakqueue](queue $queue, int $delay)
 // Play an animation on a player
 [command,anim](seq $anim, int $delay)
 [command,.anim](seq $anim, int $delay)
 // Returns true if the player's packet buffer is full for this cycle
 [command,buffer_full]()(int)
+[command,.buffer_full]()(int)
 // Refresh the player's appearance
 [command,buildappearance](inv $inv)
 [command,.buildappearance](inv $inv)
 // Move the camera
 [command,cam_moveto](coord $sourceCoord, int $sourceHeight, int $moveSpeed, int $moveMultiplier)
+[command,.cam_moveto](coord $sourceCoord, int $sourceHeight, int $moveSpeed, int $moveMultiplier)
 // Make the camera look at a coord
 [command,cam_lookat](coord $destCoord, int $destHeight, int $rotationSpeed, int $rotationMultiplier)
+[command,.cam_lookat](coord $destCoord, int $destHeight, int $rotationSpeed, int $rotationMultiplier)
 // Shake the camera
 [command,cam_shake](int $type, int $jitter, int $amplitude, int $frequency)
+[command,.cam_shake](int $type, int $jitter, int $amplitude, int $frequency)
 // Reset the camera back to the player
 [command,cam_reset]
 [command,.cam_reset]
@@ -147,17 +146,20 @@
 // Get the player's internally stored name - lowercased, underscores
 [command,name]()(string)
 [command,.name]()(string)
-// Requires protected access - set 
+// Requires protected access - set approach range
 [command,p_aprange](int $range)
-// Requires protected access - if the player moved this cycle, wait a tick before continuing
+[command,.p_aprange](int $range)
+// Requires protected access - if the player moved this cycle, delay a tick before continuing
 [command,p_arrivedelay]
+[command,.p_arrivedelay]
 // Requires protected access - open a number input dialog
 [command,p_countdialog]
+[command,.p_countdialog]
 // Requires protected access - delay this script/the player for $delay cycles
 [command,p_delay](int $delay)
 [command,.p_delay](int $delay)
 // Requires protected access - run the opheld $op trigger for the item at $slot in $inv
-[command,p_opheld](int $op, int $inv, int $slot)
+//[command,p_opheld](int $op, int $inv, int $slot)
 // Requires protected access - set the player's interaction to oploc $op on the active_loc
 [command,p_oploc](int $op)
 // Requires protected access - set the player's interaction to opnpc $op on the active_npc
@@ -205,11 +207,13 @@
 [command,.uid]()(player_uid)
 // Request the player to log out
 [command,p_logout]
+[command,.p_logout]
 // Prevent logout for a duration
 [command,p_preventlogout](string $message, int $duration)
 [command,.p_preventlogout](string $message, int $duration)
 // Set a component's colour
 [command,if_setcolour](component $component, int $colour)
+[command,.if_setcolour](component $component, int $colour)
 // Open a modal in the chat box
 [command,if_openchat](interface $interface)
 [command,.if_openchat](interface $interface)
@@ -224,8 +228,10 @@
 [command,.if_setobject](component $component, obj $obj, int $scale)
 // Set a component's model
 [command,if_setmodel](component $component, int $model)
+[command,.if_setmodel](component $component, int $model)
 // Recolor a component's model
 [command,if_setrecol](component $component, int $src, int $dest)
+[command,.if_setrecol](component $component, int $src, int $dest)
 // Open the tutorial modal mode ("sticky" interface)
 [command,tut_open](interface $interface)
 // Close the tutorial modal mode (back to normal gameplay)
@@ -234,6 +240,7 @@
 [command,tut_flash](int $tab)
 // Set a component's model animation
 [command,if_setanim](component $component, seq $anim)
+[command,.if_setanim](component $component, seq $anim)
 // Set a side tab to a specific interface
 [command,if_settab](interface $interface, int $tab)
 [command,.if_settab](interface $interface, int $tab)
@@ -248,32 +255,40 @@
 // [command,.if_openoverlay](interface $interface)
 // Open a modal in the side tab
 [command,if_openside](interface $interface)
-// Set a component's model to the local player's chat head
+[command,.if_openside](interface $interface)
+// Set a component's model to the player's chat head
 [command,if_setplayerhead](component $component)
+[command,.if_setplayerhead](component $component)
 // Set a component's text
 [command,if_settext](component $component, string $text)
 [command,.if_settext](component $component, string $text)
 // Set a component's model to a npc's chat head
 [command,if_setnpchead](component $component, npc $npc)
+[command,.if_setnpchead](component $component, npc $npc)
 // Reposition a component
 [command,if_setposition](component $component, int $x, int $y);
+[command,.if_setposition](component $component, int $x, int $y);
 // Give xp in a stat
 [command,stat_advance](stat $stat, int $exp)
+[command,.stat_advance](stat $stat, int $exp)
 // Hurt a player
-[command,damage](player_uid $uid, int $type, int $amount)
-[command,.damage](player_uid $uid, int $type, int $amount)
+[command,damage](int $type, int $amount)
+[command,.damage](int $type, int $amount)
 // internal- set which buttons can re-trigger the suspended script
 [command,if_setresumebuttons](component $component1, component $component2, component $component3, component $component4, component $component5)
+[command,.if_setresumebuttons](component $component1, component $component2, component $component3, component $component4, component $component5)
 // Choose a text string based on the player's gender
 [command,text_gender](string $male_text, string $female_text)(string)
 [command,.text_gender](string $male_text, string $female_text)(string)
 // Play a song
 [command,midi_song](string $song)
+[command,.midi_song](string $song)
 // Play a jingle (advancing levels, completing quests, ...)
 [command,midi_jingle](string $jingle, int $length)
 [command,.midi_jingle](string $jingle, int $length)
 // Show the hint arrow at $coord
 [command,hint_coord](int $offset, coord $coord, int $height)
+[command,.hint_coord](int $offset, coord $coord, int $height)
 // Start a softtimer on the active_player
 [command,softtimer]/*(softtimer $timer, int $interval, ...)*/
 [command,.softtimer]/*(softtimer $timer, int $interval, ...)*/
@@ -288,6 +303,7 @@
 [command,.cleartimer](timer $timer)
 // Return ^true if the active_player has $timer running
 [command,gettimer](timer $timer)(int) // confirmed
+[command,.gettimer](timer $timer)(int)
 // Play a spotanim on the active_player
 [command,spotanim_pl](spotanim $spotanim, int $height, int $delay)
 [command,.spotanim_pl](spotanim $spotanim, int $height, int $delay)
@@ -296,6 +312,7 @@
 [command,.hint_stop]
 // Requires protected access - move the player from $startCoord to $endCoord with a finer ability to control speed
 [command,p_exactmove](coord $startCoord, coord $endCoord, int $startCycle, int $endCycle, int $direction)
+[command,.p_exactmove](coord $startCoord, coord $endCoord, int $startCycle, int $endCycle, int $direction)
 // Queue a script on a player
 [command,queue](queue $queue, int $delay) // + args
 [command,.queue](queue $queue, int $delay) // + args
@@ -312,7 +329,8 @@
 [command,getqueue](queue $queue)(int)
 [command,.getqueue](queue $queue)(int)
 // Requires protected access - merge the player's visual model with a loc so render priorities are correct
-[command,p_locmerge](int $startCycle, int $endCycle, coord $southEast, coord $northWest);
+[command,p_locmerge](int $startCycle, int $endCycle, coord $southEast, coord $northWest)
+[command,.p_locmerge](int $startCycle, int $endCycle, coord $southEast, coord $northWest)
 // Show the welcome screen
 [command,last_login_info]
 // Requires protected access - teleport the player to $coord, short distances (1-2 tiles) will visually walk/run
@@ -342,28 +360,25 @@
 // Get the player's current gender (0 = male, 1 = female)
 [command,gender]()(int)
 [command,.gender]()(int)
-// Show the hint arrow on $npc
-[command,hint_npc](npc_uid $npc)
-// Show the hint arrow on $player
-[command,hint_player](player_uid $player)
-[command,.hint_player](player_uid $player)
+// Show the hint arrow on the npc
+[command,hint_npc]
+// Show the hint arrow on the other player
+[command,hint_player]
+[command,.hint_player]
 // Get the currently set headicons
 [command,headicons_get]()(int)
 [command,.headicons_get]()(int)
 // Set the player's headicons
 [command,headicons_set](int $icons)
 [command,.headicons_set](int $icons)
-// Requires protected access - set the player's interaction to opobj $op on the active_player
+// Requires protected access - set the player's interaction to opobj $op on the active_obj
 [command,p_opobj](int $op)
 // Requires protected access - set the player's interaction to opplayer $op on the active_player
 [command,p_opplayer](int $op)
 [command,.p_opplayer](int $op)
 // Requires protected access - cast a spell on the active_player
 [command,p_opplayert](component $spell)
-// Find all players around $coord (limited to the nearest 8x8 zone area)
-[command,player_findallzone](coord $coord)
-// Use the next result from player_findallzone
-[command,player_findnext]()(boolean)
+[command,.p_opplayert](component $spell)
 // Allow the player to redesign their appearance (the packet is sent to the server)
 [command,allowdesign](boolean $allow)
 // Used in inv_buttond, similar to last_useslot, this is the other item in scope
@@ -383,30 +398,38 @@
 [command,lowmemory]()(boolean)
 // Set the player's identity kit
 [command,setidkit](idkit $kit, int $color)
+[command,.setidkit](idkit $kit, int $color)
 // Set the active_player to the hero that's done the most damage to the current active_player
 [command,findhero]()(boolean)
 [command,.findhero]()(boolean)
-// Track damage dealt to the active_player from .active_player
+// Track damage dealt from the player to the other player
 [command,both_heropoints](int $damage)
+[command,.both_heropoints](int $damage)
 // Set the player's gender
 [command,setgender](int $gender)
+[command,.setgender](int $gender)
 // Set the player's skin
 [command,setskincolour](int $skin_colour)
+[command,.setskincolour](int $skin_colour)
 // Requires protected access - allow or deny animations to be played
 [command,p_animprotect](int $toggle)
 [command,.p_animprotect](int $toggle)
-// Get the player's curernt run energy
+// Get the player's current run energy
 [command,runenergy]()(int)
+[command,.runenergy]()(int)
 // Get the player's current run weight
 [command,weight]()(int)
+[command,.weight]()(int)
 // Requires protected access - clear the current interaction, but leave the walk queue intact
 [command,p_clearpendingaction]
+[command,.p_clearpendingaction]
 // Add an event to the player's session logs
 [command,session_log](int $type, string $event)
 // Add a wealth event to the player's session logs
 [command,wealth_log](boolean $is_gained, int $amount, string $event)
 // Toggle the player's run-mode
 [command,p_run](int $state)
+[command,.p_run](int $state)
 
 // Npc ops (2500-2999)
 // Get access to the npc if they are in the world
@@ -438,47 +461,56 @@
 [command,.npc_find](coord $coord, npc $npc, int $distance, int $checkvis)(boolean)
 // Search for npcs in a given area
 [command,npc_findall](coord $coord, npc $npc, int $distance, int $checkvis)
-[command,.npc_findall](coord $coord, npc $npc, int $distance, int $checkvis)
 // Search for any npc in a given area
 [command,npc_findallany](coord $coord, int $distance, int $checkvis)
-[command,.npc_findallany](coord $coord, int $distance, int $checkvis)
 // Return true if a specific npc exists at $coord
 [command,npc_findexact](coord $coord, npc $npc)(boolean)
 [command,.npc_findexact](coord $coord, npc $npc)(boolean)
 // Return true if the player that has dealt the most damage to this npc is in the world
 [command,npc_findhero]()(boolean)
+[command,.npc_findhero]()(boolean)
 // Get a param on the current npc
 [command,npc_param]/*(param $param)(dynamic)*/
+[command,.npc_param]/*(param $param)(dynamic)*/
 // Queue a script on a npc
 [command,npc_queue](int $ai_queue, int $arg, int $delay)
 [command,.npc_queue](int $ai_queue, int $arg, int $delay)
 // Get the distance between the npc and a coord
 [command,npc_range](coord $coord)(int)
+[command,.npc_range](coord $coord)(int)
 // Make the npc say $text overhead
 [command,npc_say](string $text)
 [command,.npc_say](string $text)
 // Set the npc's hunt distance
 [command,npc_sethunt](int $distance)
+[command,.npc_sethunt](int $distance)
 // Set the npc's hunt mode
 [command,npc_sethuntmode](hunt $hunt)
+[command,.npc_sethuntmode](hunt $hunt)
 // Set the npc's ai mode
 [command,npc_setmode](npc_mode $mode)
 [command,.npc_setmode](npc_mode $mode)
 // Get the base level of $stat
 [command,npc_basestat](npc_stat $stat)(int)
+[command,.npc_basestat](npc_stat $stat)(int)
 // Get the current level of $stat
 [command,npc_stat](npc_stat $stat)(int)
+[command,.npc_stat](npc_stat $stat)(int)
 // Boost $stat
 [command,npc_statadd](npc_stat $stat, int $constant, int $percent)
+[command,.npc_statadd](npc_stat $stat, int $constant, int $percent)
 // Heal $stat back to base
 [command,npc_statheal](npc_stat $stat, int $amount_to_heal, int $percent_to_heal)
+[command,.npc_statheal](npc_stat $stat, int $amount_to_heal, int $percent_to_heal)
 // Drain $stat
 [command,npc_statsub](npc_stat $stat, int $constant, int $percent)
+[command,.npc_statsub](npc_stat $stat, int $constant, int $percent)
 // Get the current npc's type
 [command,npc_type]()(npc)
 [command,.npc_type]()(npc)
 // Hurt the current npc
 [command,npc_damage](int $type, int $amount)
+[command,.npc_damage](int $type, int $amount)
 // Get the current npc's display name
 [command,npc_name]()(string)
 [command,.npc_name]()(string)
@@ -501,11 +533,13 @@
 [command,.npc_tele](coord $coord)
 // Change the npc's current type - new npc properties will be inherited
 [command,npc_changetype](npc $type)
+[command,.npc_changetype](npc $type)
 // Return the current npc's ai mode
 [command,npc_getmode]()(npc_mode)
 [command,.npc_getmode]()(npc_mode)
 // Track damage dealt to the active_npc from active_player
 [command,npc_heropoints](int $damage)
+[command,.npc_heropoints](int $damage)
 // Set the npc's walktrigger
 [command,npc_walktrigger](int $ai_queue, int $arg)
 [command,.npc_walktrigger](int $ai_queue, int $arg)
@@ -515,8 +549,9 @@
 // Get the npc's attack range
 [command,npc_attackrange]()(int)
 [command,.npc_attackrange]()(int)
-// If the NPC moved this cycle, wait a tick before continuing
+// If the NPC moved this or the previous cycle, delay before continuing
 [command,npc_arrivedelay]
+[command,.npc_arrivedelay]
 // Return true if the npc has the specified op
 [command,npc_hasop](int $op)(boolean)
 [command,.npc_hasop](int $op)(boolean)
@@ -527,10 +562,13 @@
 [command,.loc_add](coord $coord, loc $loc, int $angle, locshape $shape, int $duration)
 // Get the current loc's angle
 [command,loc_angle]()(int)
+[command,.loc_angle]()(int)
 // Play an animation on the loc
 [command,loc_anim](seq $anim)
+[command,.loc_anim](seq $anim)
 // Get the current loc's category
 [command,loc_category]()(category)
+[command,.loc_category]()(category)
 // Change the loc into a new loc for $duration cycles
 [command,loc_change](loc $new_loc, int $duration)
 [command,.loc_change](loc $new_loc, int $duration)
@@ -547,13 +585,16 @@
 [command,loc_findallzone](coord $coord)
 // Use the next result from loc_findallzone
 [command,loc_findnext]()(boolean)
+[command,.loc_findnext]()(boolean)
 // Get a param on the current loc
 [command,loc_param]/*(param $param)(dynamic)*/
+[command,.loc_param]/*(param $param)(dynamic)*/
 // Get the current loc's type
 [command,loc_type]()(loc)
 [command,.loc_type]()(loc)
 // Get the current loc's display name
 [command,loc_name]()(string)
+[command,.loc_name]()(string)
 // Get the current loc's shape
 [command,loc_shape]()(locshape)
 [command,.loc_shape]()(locshape)
@@ -564,21 +605,28 @@
 [command,.obj_add](coord $coord, namedobj $obj, int $count, int $duration)
 // Spawn an object at $coord for all players
 [command,obj_addall](coord $coord, namedobj $obj, int $count, int $duration)
+[command,.obj_addall](coord $coord, namedobj $obj, int $count, int $duration)
 // Get a param on the current object
 [command,obj_param]/*(param $param)(dynamic)*/
+[command,.obj_param]/*(param $param)(dynamic)*/
 // Get the current object's display anme
 [command,obj_name]()(string)
+[command,.obj_name]()(string)
 // Despawn the current object
 [command,obj_del]
+[command,.obj_del]
 // Get how many of the current object there are
 [command,obj_count]()(int)
+[command,.obj_count]()(int)
 // Get the current object's type
 [command,obj_type]()(obj)
+[command,.obj_type]()(obj)
 // Pick up the current object and place it in $inv
 [command,obj_takeitem](inv $inv)
 // Get the current object's coord
 [command,obj_coord]()(coord)
-// Return true if a specific object exists at $coord
+[command,.obj_coord]()(coord)
+// Return true if a specific object exists at $coord for the player
 [command,obj_find](coord $coord, obj $obj)(boolean)
 
 // Npc config ops (4000-4099)
@@ -648,7 +696,6 @@
 [command,inv_allstock](inv $inv)(boolean)
 // Get the inv config's size
 [command,inv_size](inv $inv)(int)
-[command,.inv_size](inv $inv)(int) // todo: remove this
 // Get the base stock of $obj in the inv config
 [command,inv_stockbase](inv $inv, obj $obj)(int)
 // Add an object to an inventory
@@ -668,10 +715,8 @@
 [command,.inv_delslot](inv $inv, int $slot)
 // Drop an object from an inventory
 [command,inv_dropitem](inv $inv, coord $coord, obj $obj, int $count, int $duration)
-[command,.inv_dropitem](inv $inv, coord $coord, obj $obj, int $count, int $duration)
 // Drop everything in $slot from an inventory
 [command,inv_dropslot](inv $inv, coord $coord, int $slot, int $duration)
-[command,.inv_dropslot](inv $inv, coord $coord, int $slot, int $duration)
 // Get the number of free slots in an inventory
 [command,inv_freespace](inv $inv)(int)
 [command,.inv_freespace](inv $inv)(int)
@@ -860,6 +905,14 @@
 [command,gettimespent](int $unit)(int)
 // Print a message on the server
 [command,console](string $text)
+// Get the number of npcs in the world
+[command,npccount]()(int)
+// Get the number of zones in the world
+[command,zonecount]()(int)
+// Get the number of objects in the world
+[command,loccount]()(int)
+// Get the number of locs in the world
+[command,objcount]()(int)
 
 // [command,inv_setvar](inv $inv, int $slot, obj $obj, int $value)
 // [command,inv_getvar](inv $inv, int $slot, obj $obj)(int)

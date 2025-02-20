@@ -11,7 +11,6 @@ import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 import ScriptState from '#/engine/script/ScriptState.js';
 import {check, VarNpcValid, VarPlayerValid, VarSharedValid} from '#/engine/script/ScriptValidators.js';
-import {ProtectedActivePlayer} from '#/engine/script/ScriptPointer.js';
 
 const CoreOps: CommandHandlers = {
     [ScriptOpcode.PUSH_CONSTANT_INT]: state => {
@@ -23,90 +22,54 @@ const CoreOps: CommandHandlers = {
     },
 
     [ScriptOpcode.PUSH_VARP]: state => {
-        const secondary = (state.intOperand >> 16) & 0x1;
-        if (secondary && !state._activePlayer2) {
-            throw new Error('No secondary active_player.');
-        } else if (!secondary && !state._activePlayer) {
-            throw new Error('No active_player.');
-        }
+        const primary = (state.intOperand & 0x10000) === 0;
+        const player = state.activePlayer(primary);
 
         const varpType: VarPlayerType = check(state.intOperand & 0xffff, VarPlayerValid);
         if (varpType.type === ScriptVarType.STRING) {
-            state.pushString(secondary ? state._activePlayer2!.getVar(varpType.id) as string : state._activePlayer!.getVar(varpType.id) as string);
+            state.pushString(player.getVar(varpType.id) as string);
         } else {
-            state.pushInt(secondary ? state._activePlayer2!.getVar(varpType.id) as number : state._activePlayer!.getVar(varpType.id) as number);
+            state.pushInt(player.getVar(varpType.id) as number);
         }
     },
 
     [ScriptOpcode.POP_VARP]: state => {
-        const secondary = (state.intOperand >> 16) & 0x1;
-        if (secondary && !state._activePlayer2) {
-            throw new Error('No secondary active_player.');
-        } else if (!secondary && !state._activePlayer) {
-            throw new Error('No active_player.');
-        }
+        const primary = (state.intOperand & 0x10000) === 0;
+        const player = state.activePlayer(primary);
 
         const varpType: VarPlayerType = check(state.intOperand & 0xffff, VarPlayerValid);
-        if (!state.pointerGet(ProtectedActivePlayer[secondary]) && varpType.protect) {
+        if (varpType.protect && player.protectedAccessScript !== state) {
             throw new Error(`%${varpType.debugname} requires protected access`);
         }
 
         if (varpType.type === ScriptVarType.STRING) {
-            const value = state.popString();
-            if (secondary) {
-                state._activePlayer2!.setVar(varpType.id, value);
-            } else {
-                state._activePlayer!.setVar(varpType.id, value);
-            }
+            player.setVar(varpType.id, state.popString());
         } else {
-            const value = state.popInt();
-            if (secondary) {
-                state._activePlayer2!.setVar(varpType.id, value);
-            } else {
-                state._activePlayer!.setVar(varpType.id, value);
-            }
+            player.setVar(varpType.id, state.popInt());
         }
     },
 
     [ScriptOpcode.PUSH_VARN]: state => {
-        const secondary = (state.intOperand >> 16) & 0x1;
-        if (secondary && !state._activeNpc2) {
-            throw new Error('No secondary active_npc.');
-        } else if (!secondary && !state._activeNpc) {
-            throw new Error('No active_npc.');
-        }
+        const primary = (state.intOperand & 0x10000) === 0;
+        const npc = state.activeNpc(primary);
 
         const varnType: VarNpcType = check(state.intOperand & 0xffff, VarNpcValid);
         if (varnType.type === ScriptVarType.STRING) {
-            state.pushString(secondary ? state._activeNpc2!.getVar(varnType.id) as string : state._activeNpc!.getVar(varnType.id) as string);
+            state.pushString(npc.getVar(varnType.id) as string);
         } else {
-            state.pushInt(secondary ? state._activeNpc2!.getVar(varnType.id) as number : state._activeNpc!.getVar(varnType.id) as number);
+            state.pushInt(npc.getVar(varnType.id) as number);
         }
     },
 
     [ScriptOpcode.POP_VARN]: state => {
-        const secondary = (state.intOperand >> 16) & 0x1;
-        if (secondary && !state._activeNpc2) {
-            throw new Error('No secondary active_npc.');
-        } else if (!secondary && !state._activeNpc) {
-            throw new Error('No active_npc.');
-        }
+        const primary = (state.intOperand & 0x10000) === 0;
+        const npc = state.activeNpc(primary);
 
         const varnType: VarNpcType = check(state.intOperand & 0xffff, VarNpcValid);
         if (varnType.type === ScriptVarType.STRING) {
-            const value = state.popInt();
-            if (secondary) {
-                state._activeNpc2!.setVar(varnType.id, value);
-            } else {
-                state._activeNpc!.setVar(varnType.id, value);
-            }
+            npc.setVar(varnType.id, state.popString());
         } else {
-            const value = state.popInt();
-            if (secondary) {
-                state._activeNpc2!.setVar(varnType.id, value);
-            } else {
-                state._activeNpc!.setVar(varnType.id, value);
-            }
+            npc.setVar(varnType.id, state.popInt());
         }
     },
 

@@ -33,7 +33,7 @@ spotanim_npc(npc_param(proj_launch), npc_param(proj_height), 0);
 
 %npc_action_delay = add(map_clock, npc_param(attackrate));
 def_int $duration = 64;
-$duration = ~player_projectile(npc_coord, coord, uid, npc_param(proj_travel), 40, 36, 32, 15, 0, 11, 5);
+$duration = ~player_projectile(npc_coord, npc_param(proj_travel), 40, 36, 32, 15, 0, 11, 5);
 
 if (randominc($attack_roll) > randominc($defence_roll)) {
     ~playerhit_n_ranged(randominc($maxhit), $duration, npc_param(attackrate));

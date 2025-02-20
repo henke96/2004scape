@@ -8,10 +8,10 @@ if (stat(hitpoints) = 0) {
 }
 if_close;
 if ($amount > 0) {
-    damage(uid, 1, $amount);
+    damage(1, $amount);
     ~human_hit_sound;
 } else {
-    damage(uid, 0, 0);
+    damage(0, 0);
 }
 
 if (stat(hitpoints) = 0){

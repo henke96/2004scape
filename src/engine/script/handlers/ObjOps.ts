@@ -4,10 +4,8 @@ import { ParamHelper } from '#/cache/config/ParamHelper.js';
 import ParamType from '#/cache/config/ParamType.js';
 
 import World from '#/engine/World.js';
-import Zone from '#/engine/zone/Zone.js';
 
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
-import { ActiveObj, ActivePlayer } from '#/engine/script/ScriptPointer.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 
 import Obj from '#/engine/entity/Obj.js';
@@ -40,20 +38,21 @@ const ObjOps: CommandHandlers = {
             return;
         }
 
-        if (!objType.stackable || count === 1) {
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
+
+        if (!objType.stackable) {
             for (let i = 0; i < count; i++) {
                 const obj: Obj = new Obj(position.level, position.x, position.z, EntityLifeCycle.DESPAWN, objId, 1);
-                World.addObj(obj, state.activePlayer.hash64, duration);
+                World.addObj(obj, player.hash64, duration);
 
-                state.activeObj = obj;
-                state.pointerAdd(ActiveObj[state.intOperand]);
+                state.setActiveObj(true, obj);
             }
         } else {
             const obj: Obj = new Obj(position.level, position.x, position.z, EntityLifeCycle.DESPAWN, objId, count);
-            World.addObj(obj, state.activePlayer.hash64, duration);
+            World.addObj(obj, player.hash64, duration);
 
-            state.activeObj = obj;
-            state.pointerAdd(ActiveObj[state.intOperand]);
+            state.setActiveObj(true, obj);
         }
     },
 
@@ -78,27 +77,25 @@ const ObjOps: CommandHandlers = {
             return;
         }
 
+        const primary = state.intOperand === 0;
         if (!objType.stackable || count === 1) {
             for (let i = 0; i < count; i++) {
                 const obj: Obj = new Obj(position.level, position.x, position.z, EntityLifeCycle.DESPAWN, objId, 1);
                 World.addObj(obj, Obj.NO_RECEIVER, duration);
-
-                state.activeObj = obj;
-                state.pointerAdd(ActiveObj[state.intOperand]);
+                state.setActiveObj(primary, obj);
             }
         } else {
             const obj: Obj = new Obj(position.level, position.x, position.z, EntityLifeCycle.DESPAWN, objId, count);
             World.addObj(obj, Obj.NO_RECEIVER, duration);
-
-            state.activeObj = obj;
-            state.pointerAdd(ActiveObj[state.intOperand]);
+            state.setActiveObj(primary, obj);
         }
     },
 
     [ScriptOpcode.OBJ_PARAM]: state => {
         const paramType: ParamType = check(state.popInt(), ParamTypeValid);
 
-        const objType: ObjType = check(state.activeObj.type, ObjTypeValid);
+        const primary = state.intOperand === 0;
+        const objType: ObjType = check(state.activeObj(primary).type, ObjTypeValid);
         if (paramType.isString()) {
             state.pushString(ParamHelper.getStringParam(paramType.id, objType, paramType.defaultString));
         } else {
@@ -107,25 +104,26 @@ const ObjOps: CommandHandlers = {
     },
 
     [ScriptOpcode.OBJ_NAME]: state => {
-        const objType: ObjType = check(state.activeObj.type, ObjTypeValid);
+        const primary = state.intOperand === 0;
+        const objType: ObjType = check(state.activeObj(primary).type, ObjTypeValid);
 
         state.pushString(objType.name ?? objType.debugname ?? 'null');
     },
 
     [ScriptOpcode.OBJ_DEL]: state => {
-        const duration: number = ObjType.get(state.activeObj.type).respawnrate;
-        if (state.pointerGet(ActivePlayer[state.intOperand])) {
-            World.removeObj(state.activeObj, duration);
-        } else {
-            World.removeObj(state.activeObj, duration);
-        }
+        const primary = state.intOperand === 0;
+        const obj = state.activeObj(primary);
+
+        const duration: number = ObjType.get(obj.type).respawnrate;
+        World.removeObj(obj, duration);
     },
 
     [ScriptOpcode.OBJ_COUNT]: state => {
-        const obj: Obj = state.activeObj;
+        const primary = state.intOperand === 0;
+        const obj = state.activeObj(primary);
 
-        if (obj.isValid(state.activePlayer.hash64)) {
-            state.pushInt(state.activeObj.count);
+        if (obj.isValid()) {
+            state.pushInt(obj.count);
             return;
         }
 
@@ -133,34 +131,37 @@ const ObjOps: CommandHandlers = {
     },
 
     [ScriptOpcode.OBJ_TYPE]: state => {
-        state.pushInt(check(state.activeObj.type, ObjTypeValid).id);
+        const primary = state.intOperand === 0;
+        state.pushInt(check(state.activeObj(primary).type, ObjTypeValid).id);
     },
 
     // https://x.com/JagexAsh/status/1679942100249464833
     [ScriptOpcode.OBJ_TAKEITEM]: state => {
         const invType: InvType = check(state.popInt(), InvTypeValid);
 
-        const obj: Obj = state.activeObj;
+        const obj: Obj = state.activeObj(true);
         const objType = ObjType.get(obj.type);
 
-        if (!obj.isValid(state.activePlayer.hash64)) {
+        const player = state.activePlayer(true);
+        if (!obj.isValid(player.hash64)) {
             return false;
         }
 
-        state.activePlayer.invAdd(invType.id, obj.type, obj.count);
+        player.invAdd(invType.id, obj.type, obj.count);
 
         if (obj.lifecycle === EntityLifeCycle.RESPAWN) {
-            state.activePlayer.addWealthLog(obj.count * objType.cost, `Picked up ${objType.debugname} x${obj.count}`);
+            player.addWealthLog(obj.count * objType.cost, `Picked up ${objType.debugname} x${obj.count}`);
             World.removeObj(obj, objType.respawnrate);
         } else if (obj.lifecycle === EntityLifeCycle.DESPAWN) {
-            state.activePlayer.addWealthLog(obj.count * objType.cost, `Picked up ${objType.debugname} x${obj.count}`);
+            player.addWealthLog(obj.count * objType.cost, `Picked up ${objType.debugname} x${obj.count}`);
             World.removeObj(obj, 0);
         }
     },
 
     [ScriptOpcode.OBJ_COORD]: state => {
-        const coord: CoordGrid = state.activeObj;
-        state.pushInt(CoordGrid.packCoord(coord.level, coord.x, coord.z));
+        const primary = state.intOperand === 0;
+        const obj = state.activeObj(primary);
+        state.pushInt(CoordGrid.packCoord(obj.level, obj.x, obj.z));
     },
 
     [ScriptOpcode.OBJ_FIND]: state => {
@@ -169,14 +170,13 @@ const ObjOps: CommandHandlers = {
         const objType: ObjType = check(objId, ObjTypeValid);
         const position: CoordGrid = check(coord, CoordValid);
 
-        const obj = World.getObj(position.x, position.z, position.level, objType.id, state.activePlayer.hash64);
+        const obj = World.getObj(position.x, position.z, position.level, objType.id, state.activePlayer(true).hash64);
         if (!obj) {
             state.pushInt(0);
             return;
         }
 
-        state.activeObj = obj;
-        state.pointerAdd(ActiveObj[state.intOperand]);
+        state.setActiveObj(true, obj);
         state.pushInt(1);
     }
 

@@ -337,7 +337,7 @@ queue(quest_chompybird_complete, 0);
 
 // look for any chompy birds to shoot
 [ai_timer,chompybird_rantz]
-.npc_findallany(npc_coord, 24, ^vis_off);
+npc_findallany(npc_coord, 24, ^vis_off);
 while (.npc_findnext = true) {
     // find any chompy birds close to Rantz
     if (.npc_type = chompy_bird) {
@@ -353,7 +353,7 @@ while (.npc_findnext = true) {
                 
                 npc_anim(ogre_attackbow, 0);
                 spotanim_npc(ogre_arrow_launch, 50, 0);
-                def_int $duration = ~npc_projectile(npc_coord, .npc_uid, ogre_arrow_travel, 40, 36, 41, 15, 5, 11, 5);
+                def_int $duration = ~.npc_projectile(npc_coord, ogre_arrow_travel, 40, 36, 41, 15, 5, 11, 5);
                 def_int $delay = add(sub(divide($duration, 30), 1), 2);
                 npc_delay($delay);
 

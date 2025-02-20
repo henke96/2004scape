@@ -66,11 +66,10 @@ if (.%duelpartner = uid) {
     .invother_transmit(uid, tempinv, duel_select_type:otherinv);
     .inv_transmit(inv, duel_side:inv);
 
-    if_openmain_side(duel_select_type, duel_side);
-    .if_openmain_side(duel_select_type, duel_side);
-    
     %duelstatus = 0;
     .%duelstatus = 0;
+    if_openmain_side(duel_select_type, duel_side);
+    .if_openmain_side(duel_select_type, duel_side);
 } else {
     .mes("<displayname>:duelreq:");
 }
@@ -79,7 +78,10 @@ if (.%duelpartner = uid) {
 inv_stoptransmit(duel_select_type:inv);
 inv_stoptransmit(duel_select_type:otherinv);
 inv_stoptransmit(duel_side:inv);
-
+if (%duelstatus >= 2) {
+    // proceeding to confirm modal
+    return;
+}
 
 if (.finduid(%duelpartner) = true) {
     .%duelpartner = null;
@@ -99,9 +101,9 @@ if (%duelstatus >= 4) {
     return; // duel accepted
 }
 if (.finduid(%duelpartner) = true) {
+    .%duelpartner = null;
     .if_close;
     .mes("Other player declined stake and duel options."); // 2006 https://youtu.be/HFp6hOkiCns?t=304
-    .%duelpartner = null;
 }
 ~moveallinv(tempinv, inv);
 %duelpartner = null;
@@ -151,6 +153,9 @@ if (.finduid(%duelpartner) = true & ~enough_duel_space = true) { // https://yout
             invother_transmit(.uid, tempinv, duel_confirm:otherinv);
             .inv_transmit(tempinv, duel_confirm:inv);
         }
+
+        %duelstatus = 2;
+        .%duelstatus = 2;
         if_openmain(duel_confirm);
         .if_openmain(duel_confirm);
 
@@ -159,9 +164,6 @@ if (.finduid(%duelpartner) = true & ~enough_duel_space = true) { // https://yout
 
         if_settext(duel_confirm:com_97, "Are you sure you want to fight this duel?");
         .if_settext(duel_confirm:com_97, "Are you sure you want to fight this duel?");
-
-        %duelstatus = 2;
-        .%duelstatus = 2;
     } else {
         .if_settext(duel_select_type:status, "Other player has accepted...");
         if_settext(duel_select_type:status, "Waiting for other player...");
@@ -181,7 +183,7 @@ if (testbit(%duel_settings, ^no_armour) = true) {
 if (testbit(%duel_settings, ^no_jewelry) = true) {
     $no_jewelry_size = enum_getoutputcount(duel_arena_jewelry_slots);
 }
-def_int $size = calc(inv_size(tempinv) + .inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size);
+def_int $size = calc(inv_size(tempinv) + inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size);
 def_int $slot = 0;
 def_int $space_needed = 0;
 def_string $fail_message = "You do not have enough space for the items removed.";
@@ -197,13 +199,13 @@ while ($slot < $size) {
     } else if ($slot < calc($no_weapons_size + $no_armour_size + $no_jewelry_size)) {
         $obj = inv_getobj(worn, enum(int, int, duel_arena_jewelry_slots, calc($slot - $no_weapons_size - $no_armour_size)));
         $num = inv_getnum(worn, enum(int, int, duel_arena_jewelry_slots, calc($slot - $no_weapons_size - $no_armour_size)));
-    } else if ($slot < calc(.inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size)) {
+    } else if ($slot < calc(inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size)) {
         $obj = inv_getobj(tempinv, calc($slot - $no_weapons_size - $no_armour_size - $no_jewelry_size));
         $num = inv_getnum(tempinv, calc($slot - $no_weapons_size - $no_armour_size - $no_jewelry_size));
         $fail_message = "You do not have enough space for the stake.";
     } else {
-        $obj = .inv_getobj(tempinv, calc($slot - .inv_size(tempinv) - $no_weapons_size - $no_armour_size - $no_jewelry_size));
-        $num = .inv_getnum(tempinv, calc($slot - .inv_size(tempinv) - $no_weapons_size - $no_armour_size - $no_jewelry_size));
+        $obj = .inv_getobj(tempinv, calc($slot - inv_size(tempinv) - $no_weapons_size - $no_armour_size - $no_jewelry_size));
+        $num = .inv_getnum(tempinv, calc($slot - inv_size(tempinv) - $no_weapons_size - $no_armour_size - $no_jewelry_size));
         $fail_message = "You do not have enough space for the stake.";
     }
     
@@ -211,7 +213,7 @@ while ($slot < $size) {
         if (oc_stackable($obj) = false) {
             $num = 1;
         }
-        if (inv_itemspace(inv, $obj, $num, .inv_size(inv)) = true) {
+        if (inv_itemspace(inv, $obj, $num, inv_size(inv)) = true) {
             if (oc_stackable($obj) = false | (oc_stackable($obj) = true & inv_total(inv, $obj) < 1)) {
                 $space_needed = calc($space_needed + 1);
             }
@@ -242,7 +244,7 @@ if (testbit(.%duel_settings, ^no_armour) = true) {
 if (testbit(.%duel_settings, ^no_jewelry) = true) {
     $no_jewelry_size = enum_getoutputcount(duel_arena_jewelry_slots);
 }
-def_int $size = calc(.inv_size(tempinv) + inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size);
+def_int $size = calc(inv_size(tempinv) + inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size);
 def_int $slot = 0;
 def_int $space_needed = 0;
 while ($slot < $size) {
@@ -257,7 +259,7 @@ while ($slot < $size) {
     } else if ($slot < calc($no_weapons_size + $no_armour_size + $no_jewelry_size)) {
         $obj = .inv_getobj(worn, enum(int, int, duel_arena_jewelry_slots, calc($slot - $no_weapons_size - $no_armour_size)));
         $num = .inv_getnum(worn, enum(int, int, duel_arena_jewelry_slots, calc($slot - $no_weapons_size - $no_armour_size)));
-    } else if ($slot < calc(.inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size)) {
+    } else if ($slot < calc(inv_size(tempinv) + $no_weapons_size + $no_armour_size + $no_jewelry_size)) {
         $obj = .inv_getobj(tempinv, calc($slot - $no_weapons_size - $no_armour_size - $no_jewelry_size));
         $num = .inv_getnum(tempinv, calc($slot - $no_weapons_size - $no_armour_size - $no_jewelry_size));
     } else {

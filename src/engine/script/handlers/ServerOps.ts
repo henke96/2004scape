@@ -9,7 +9,6 @@ import World from '#/engine/World.js';
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 import ScriptState from '#/engine/script/ScriptState.js';
-import {ActiveNpc, ActivePlayer} from '#/engine/script/ScriptPointer.js';
 import {HuntIterator, NpcHuntAllCommandIterator} from '#/engine/script/ScriptIterators.js';
 
 import { CoordGrid } from '#/engine/CoordGrid.js';
@@ -97,8 +96,8 @@ const ServerOps: CommandHandlers = {
             throw new Error('[ServerOps] huntnext command must result instance of Player.');
         }
 
-        state.activePlayer = result.value;
-        state.pointerAdd(ActivePlayer[state.intOperand]);
+        const primary = state.intOperand === 0;
+        state.setActivePlayer(primary, result.value);
         state.pushInt(1);
     },
 
@@ -125,8 +124,8 @@ const ServerOps: CommandHandlers = {
             throw new Error('[ServerOps] npc_huntnext command must result instance of Npc.');
         }
 
-        state.activeNpc = result.value;
-        state.pointerAdd(ActiveNpc[state.intOperand]);
+        const primary = state.intOperand === 0;
+        state.setActiveNpc(primary, result.value);
         state.pushInt(1);
     },
 
@@ -316,37 +315,32 @@ const ServerOps: CommandHandlers = {
     // https://x.com/JagexAsh/status/1730321158858276938
     // https://x.com/JagexAsh/status/1814230119411540058
     [ScriptOpcode.WORLD_DELAY]: state => {
-        // arg is popped elsewhere
-        state.execution = ScriptState.WORLD_SUSPENDED;
+        World.enqueueScript(state, state.popInt());
+        state.execution = ScriptState.DELAYED;
+        state.corruptProtectedAccess(true);
+        state.corruptProtectedAccess(false);
     },
 
     [ScriptOpcode.PROJANIM_PL]: state => {
-        const [srcCoord, uid, spotanim, srcHeight, dstHeight, delay, duration, peak, arc] = state.popInts(9);
+        const [srcCoord, spotanim, srcHeight, dstHeight, delay, duration, peak, arc] = state.popInts(8);
 
         const srcPos: CoordGrid = check(srcCoord, CoordValid);
         const spotanimType: SpotanimType = check(spotanim, SpotAnimTypeValid);
 
-        const player = World.getPlayerByUid(uid);
-        if (!player) {
-            throw new Error(`attempted to use invalid player uid: ${uid}`);
-        }
+        const primary = state.intOperand === 0;
+        const player = state.activePlayer(primary);
 
         World.mapProjAnim(srcPos.level, srcPos.x, srcPos.z, player.x, player.z, -player.pid - 1, spotanimType.id, srcHeight + 100, dstHeight + 100, delay, duration, peak, arc);
     },
 
     [ScriptOpcode.PROJANIM_NPC]: state => {
-        const [srcCoord, npcUid, spotanim, srcHeight, dstHeight, delay, duration, peak, arc] = state.popInts(9);
+        const [srcCoord, spotanim, srcHeight, dstHeight, delay, duration, peak, arc] = state.popInts(8);
 
         const srcPos: CoordGrid = check(srcCoord, CoordValid);
         const spotanimType: SpotanimType = check(spotanim, SpotAnimTypeValid);
 
-        const slot = npcUid & 0xffff;
-        const _expectedType = (npcUid >> 16) & 0xffff;
-
-        const npc = World.getNpc(slot);
-        if (!npc) {
-            throw new Error(`attempted to use invalid npc uid: ${npcUid}`);
-        }
+        const primary = state.intOperand === 0;
+        const npc = state.activeNpc(primary);
 
         World.mapProjAnim(srcPos.level, srcPos.x, srcPos.z, npc.x, npc.z, npc.nid + 1, spotanimType.id, srcHeight + 100, dstHeight + 100, delay, duration, peak, arc);
     },
@@ -401,22 +395,6 @@ const ServerOps: CommandHandlers = {
             }
         }
         state.pushInt(0);
-    },
-
-    [ScriptOpcode.NPCCOUNT]: state => {
-        state.pushInt(World.getTotalNpcs());
-    },
-
-    [ScriptOpcode.ZONECOUNT]: state => {
-        state.pushInt(World.gameMap.getTotalZones());
-    },
-
-    [ScriptOpcode.LOCCOUNT]: state => {
-        state.pushInt(World.gameMap.getTotalLocs());
-    },
-
-    [ScriptOpcode.OBJCOUNT]: state => {
-        state.pushInt(World.gameMap.getTotalObjs());
     },
 
     [ScriptOpcode.MAP_FINDSQUARE]: state => {

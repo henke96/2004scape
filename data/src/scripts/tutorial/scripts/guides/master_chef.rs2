@@ -75,5 +75,5 @@ switch_int($option) {
 
 [proc,set_hint_icon_master_chef]
 if (npc_find(0_48_48_4_11, master_chef, 10, 0) = true) {
-    hint_npc(npc_uid);
+    hint_npc;
 }

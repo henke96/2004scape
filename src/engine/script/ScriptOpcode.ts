@@ -56,8 +56,8 @@ enum ScriptOpcode {
     MOVECOORD, // official
     PLAYERCOUNT,
     PROJANIM_MAP,
-    PROJANIM_NPC, // todo: take active_npc
-    PROJANIM_PL, // todo: take active_player
+    PROJANIM_NPC,
+    PROJANIM_PL,
     SEQLENGTH, // official
     SPLIT_GET,
     SPLIT_GETANIM,
@@ -68,10 +68,6 @@ enum ScriptOpcode {
     STAT_RANDOM,
     STRUCT_PARAM,
     WORLD_DELAY, // official
-    NPCCOUNT,
-    ZONECOUNT,
-    LOCCOUNT,
-    OBJCOUNT,
     MAP_MULTIWAY, // official
 
     // Player ops (2000-2499)
@@ -107,8 +103,8 @@ enum ScriptOpcode {
     HEADICONS_SET,
     HEALENERGY, // official
     HINT_COORD,
-    HINT_NPC, // todo: take active_npc
-    HINT_PLAYER, // todo: take active_player
+    HINT_NPC,
+    HINT_PLAYER,
     HINT_STOP,
     IF_CLOSE, // official
     TUT_CLOSE,
@@ -155,7 +151,7 @@ enum ScriptOpcode {
     P_LOCMERGE, // official
     P_LOGOUT,
     P_PREVENTLOGOUT,
-    P_OPHELD, // official
+    // P_OPHELD, // official
     P_OPLOC, // official
     P_OPNPC, // official
     P_OPNPCT, // official
@@ -167,8 +163,6 @@ enum ScriptOpcode {
     P_TELEJUMP, // official
     P_TELEPORT,
     P_WALK, // official
-    PLAYER_FINDALLZONE, // todo: replace with huntall
-    PLAYER_FINDNEXT, // todo: replace with huntnext
     QUEUE, // official
     SAY, // official
     WALKTRIGGER, // official
@@ -443,6 +437,10 @@ enum ScriptOpcode {
     TIMESPENT, // custom: used to profile script execution (record start time)
     GETTIMESPENT, // custom: used to profile script execution (current duration)
     CONSOLE,
+    NPCCOUNT,
+    ZONECOUNT,
+    LOCCOUNT,
+    OBJCOUNT,
 }
 
 export default ScriptOpcode;

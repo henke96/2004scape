@@ -17,18 +17,33 @@ export default class IfButtonHandler extends MessageHandler<IfButton> {
             return false;
         }
 
-        player.lastCom = comId;
-
-        if (player.resumeButtons.indexOf(player.lastCom) !== -1) {
-            if (player.activeScript && player.activeScript.execution === ScriptState.PAUSEBUTTON) {
-                player.executeScript(player.activeScript, true, true);
+        if (player.resumeButtons.indexOf(comId) !== -1) {
+            const resumedScript = player.suspendedScript;
+            if (resumedScript?.execution === ScriptState.PAUSEBUTTON) {
+                player.suspendedScript = null;
+                player.lastCom = comId;
+                ScriptRunner.execute(resumedScript);
+    
+                if (player.modalChat !== -1 && player.suspendedScript?.execution !== ScriptState.PAUSEBUTTON) {
+                    player.closeModal();
+                }
             }
         } else {
             const root = Component.get(com.rootLayer);
 
             const script = ScriptProvider.getByTriggerSpecific(ServerTriggerType.IF_BUTTON, comId, -1);
             if (script) {
-                player.executeScript(ScriptRunner.init(script, player), root.overlay == false);
+                const protect = root.overlay == false;
+
+                // osrs modal buttons cancel dialogs (e.g. bank buttons)
+                if (protect && player.suspendedScript?.execution === ScriptState.COUNTDIALOG) {
+                    player.cancelSuspendedScript();
+                }
+                if (protect && player.protectedAccessScript !== null) {
+                    return false;
+                }
+                player.lastCom = comId;
+                player.executeScript(ScriptRunner.init(script, player), protect);
             } else if (Environment.NODE_DEBUG) {
                 player.messageGame(`No trigger for [if_button,${com.comName}]`);
             }

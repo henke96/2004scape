@@ -8,10 +8,8 @@ import World from '#/engine/World.js';
 import { Direction, CoordGrid } from '#/engine/CoordGrid.js';
 
 import ScriptFile from '#/engine/script/ScriptFile.js';
-import ScriptPointer from '#/engine/script/ScriptPointer.js';
 import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import ScriptRunner from '#/engine/script/ScriptRunner.js';
-import ScriptState from '#/engine/script/ScriptState.js';
 import ServerTriggerType from '#/engine/script/ServerTriggerType.js';
 import { HuntIterator } from '#/engine/script/ScriptIterators.js';
 import { isFlagged } from '#/engine/GameMap.js';
@@ -60,7 +58,6 @@ export default class Npc extends PathingEntity {
     readonly varsString: (string | undefined)[];
 
     // script variables
-    activeScript: ScriptState | null = null;
     queue: LinkList<EntityQueueRequest> = new LinkList();
     timerInterval: number = 0;
     timerClock: number = 0;
@@ -111,7 +108,7 @@ export default class Npc extends PathingEntity {
     cleanup(): void {
         this.nid = -1;
         this.uid = -1;
-        this.activeScript = null;
+        this.cancelSuspendedScript();
         this.huntTarget = null;
         this.queue.clear();
     }
@@ -296,31 +293,6 @@ export default class Npc extends PathingEntity {
         }
     }
 
-    executeScript(script: ScriptState) {
-        const state = ScriptRunner.execute(script);
-        if (state !== ScriptState.FINISHED && state !== ScriptState.ABORTED) {
-            if (state === ScriptState.WORLD_SUSPENDED) {
-                World.enqueueScript(script, script.popInt());
-            } else if (state === ScriptState.NPC_SUSPENDED) {
-                script.activeNpc.activeScript = script;
-            } else {
-                script.activePlayer.activeScript = script;
-            }
-        } else if (script === this.activeScript) {
-            this.activeScript = null;
-        }
-
-        if (script.pointerGet(ScriptPointer.ProtectedActivePlayer) && script._activePlayer) {
-            script._activePlayer.protect = false;
-            script.pointerRemove(ScriptPointer.ProtectedActivePlayer);
-        }
-
-        if (script.pointerGet(ScriptPointer.ProtectedActivePlayer2) && script._activePlayer2) {
-            script._activePlayer2.protect = false;
-            script.pointerRemove(ScriptPointer.ProtectedActivePlayer2);
-        }
-    }
-
     processRegen() {
         const type = NpcType.get(this.type);
 
@@ -346,7 +318,7 @@ export default class Npc extends PathingEntity {
             const type = NpcType.get(this.type);
             const script = ScriptProvider.getByTrigger(ServerTriggerType.AI_TIMER, type.id, type.category);
             if (script) {
-                this.executeScript(ScriptRunner.init(script, this));
+                ScriptRunner.execute(ScriptRunner.init(script, this));
                 this.timerClock = 0;
             }
         }
@@ -355,17 +327,17 @@ export default class Npc extends PathingEntity {
     processQueue() {
         for (let request = this.queue.head(); request !== null; request = this.queue.next()) {
             // purposely only decrements the delay when the npc is not delayed
-            if (!this.delayed) {
+            if (!this.delayed()) {
                 request.delay--;
             }
 
-            if (!this.delayed && request.delay <= 0) {
+            if (!this.delayed() && request.delay <= 0) {
                 request.unlink();
 
                 const state = ScriptRunner.init(request.script, this, null, request.args);
                 state.lastInt = request.lastInt;
                 const save = this.queue.cursor; // LinkList-specific behavior so we can getqueue/clearqueue inside of this
-                this.executeScript(state);
+                ScriptRunner.execute(state);
                 this.queue.cursor = save;
             }
         }
@@ -394,7 +366,7 @@ export default class Npc extends PathingEntity {
         }
 
         // For Npc targets, validate that the Npc is found in the world and that it's not delayed
-        if (this.target instanceof Npc && (typeof World.getNpc(this.target.nid) === 'undefined' || this.target.delayed)) {
+        if (this.target instanceof Npc && (typeof World.getNpc(this.target.nid) === 'undefined' || this.target.delayed())) {
             return false;
         }
 
@@ -422,7 +394,7 @@ export default class Npc extends PathingEntity {
     }
 
     processNpcModes() {
-        if (this.delayed) {
+        if (this.delayed()) {
             return;
         }
         if (this.targetOp === NpcMode.NULL) {
@@ -682,11 +654,11 @@ export default class Npc extends PathingEntity {
         const script: ScriptFile | null = this.getTrigger();
 
         if (script && opTrigger && this.inOperableDistance(this.target) && (this.target instanceof PathingEntity || allowOpScenery)) {
-            this.executeScript(ScriptRunner.init(script, this, this.target));
+            ScriptRunner.execute(ScriptRunner.init(script, this, this.target));
             return true;
         }
         if (script && apTrigger && this.inApproachDistance(type.attackrange, this.target)) {
-            this.executeScript(ScriptRunner.init(script, this, this.target));
+            ScriptRunner.execute(ScriptRunner.init(script, this, this.target));
             return true;
         }
         if (this.inOperableDistance(this.target)) {
@@ -909,7 +881,7 @@ export default class Npc extends PathingEntity {
                 throw new Error('[Npc] huntAll must be of type Player here.');
             }
 
-            if (hunt.checkNotBusy && player.busy()) {
+            if (hunt.checkNotBusy && !player.canAccess()) {
                 continue;
             }
 
@@ -1024,7 +996,7 @@ export default class Npc extends PathingEntity {
     }
 
     isValid(hash64?: bigint): boolean {
-        if (this.delayed) {
+        if (this.delayed()) {
             return false;
         }
         return super.isValid();

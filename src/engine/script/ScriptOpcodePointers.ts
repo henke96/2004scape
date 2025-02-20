@@ -1,6 +1,19 @@
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
 
-const POINTER_GROUP_FIND = ['find_player', 'find_npc', 'find_loc', 'find_obj', 'find_db'];
+const POINTER_GROUP_NONACTIVE = [
+    'find_player',
+    'find_npc',
+    'find_loc',
+    'find_obj',
+    'find_db',
+    'last_com',
+    'last_int',
+    'last_item',
+    'last_slot',
+    'last_targetslot',
+    'last_useitem',
+    'last_useslot',
+];
 
 const ScriptOpcodePointers: {
     [key: string]: {
@@ -22,31 +35,40 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.BAS_READYANIM]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BAS_RUNNING]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BAS_TURNONSPOT]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BAS_WALK_B]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BAS_WALK_F]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BAS_WALK_L]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BAS_WALK_R]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BUFFER_FULL]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BUILDAPPEARANCE]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.BUSY]: {
         require: ['active_player'],
@@ -73,7 +95,8 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.CLEARQUEUE]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.CLEARSOFTTIMER]: {
         require: ['active_player'],
@@ -106,6 +129,8 @@ const ScriptOpcodePointers: {
     [ScriptOpcode.FINDUID]: {
         set: ['active_player'],
         set2: ['active_player2'],
+        corrupt: ['p_active_player'],
+        corrupt2: ['p_active_player2'],
         conditional: true
     },
     [ScriptOpcode.GENDER]: {
@@ -117,28 +142,35 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.STAT_ADVANCE]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.HEADICONS_GET]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.HEADICONS_SET]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.HEALENERGY]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.HINT_COORD]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.HINT_NPC]: {
         require: ['active_player', 'active_npc']
     },
     [ScriptOpcode.HINT_PLAYER]: {
-        require: ['active_player', 'active_player2']
+        require: ['active_player', 'active_player2'],
+        require2: ['active_player', 'active_player2']
     },
     [ScriptOpcode.HINT_STOP]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.HUNTALL]: {
         set: ['find_player']
@@ -148,6 +180,8 @@ const ScriptOpcodePointers: {
         require2: ['find_player'],
         set: ['active_player'],
         set2: ['active_player2'],
+        corrupt: ['p_active_player'],
+        corrupt2: ['p_active_player2'],
         conditional: true
     },
     [ScriptOpcode.NPC_HUNTALL]: {
@@ -172,7 +206,8 @@ const ScriptOpcodePointers: {
         require: ['active_player']
     },
     [ScriptOpcode.IF_OPENCHAT]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.TUT_OPEN]: {
         require: ['active_player']
@@ -186,41 +221,52 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.IF_OPENSIDE]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETANIM]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETCOLOUR]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETHIDE]: {
         require: ['active_player'],
         require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETMODEL]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETRECOL]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETNPCHEAD]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETOBJECT]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETPLAYERHEAD]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETPOSITION]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETRESUMEBUTTONS]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETTAB]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.IF_SETTABACTIVE]: {
         require: ['active_player'],
@@ -269,62 +315,62 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.MIDI_JINGLE]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.MIDI_SONG]: {
-        require: ['active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.NAME]: {
         require: ['active_player'],
         require2: ['active_player2']
     },
     [ScriptOpcode.P_APRANGE]: {
-        require: ['p_active_player']
+        require: ['p_active_player'],
+        require2: ['p_active_player2']
     },
     [ScriptOpcode.P_ARRIVEDELAY]: {
         require: ['p_active_player'],
+        require2: ['p_active_player2'],
         corrupt: [
-            // everything except active is assumed corrupted
-            ...POINTER_GROUP_FIND,
-            'last_com',
-            'last_int',
-            'last_item',
-            'last_slot',
-            'last_targetslot',
-            'last_useitem',
-            'last_useslot'
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player2'
+        ],
+        corrupt2: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player'
         ]
     },
     [ScriptOpcode.P_COUNTDIALOG]: {
         require: ['p_active_player'],
+        require2: ['p_active_player2'],
         set: ['last_int'],
+        set2: ['last_int'],
         corrupt: [
-            // everything except active is assumed corrupted
-            ...POINTER_GROUP_FIND,
-            'last_com',
-            'last_item',
-            'last_slot',
-            'last_targetslot',
-            'last_useitem',
-            'last_useslot'
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player2'
+        ],
+        corrupt2: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player'
         ]
     },
     [ScriptOpcode.P_DELAY]: {
         require: ['p_active_player'],
+        require2: ['p_active_player2'],
         corrupt: [
-            // everything except active is assumed corrupted
-            ...POINTER_GROUP_FIND,
-            'last_com',
-            'last_int',
-            'last_item',
-            'last_slot',
-            'last_targetslot',
-            'last_useitem',
-            'last_useslot'
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player2'
+        ],
+        corrupt2: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player'
         ]
     },
     [ScriptOpcode.P_EXACTMOVE]: {
-        require: ['p_active_player']
+        require: ['p_active_player'],
+        require2: ['p_active_player2']
     },
     [ScriptOpcode.P_FINDUID]: {
         set: ['p_active_player', 'active_player' ],
@@ -332,17 +378,16 @@ const ScriptOpcodePointers: {
         conditional: true
     },
     [ScriptOpcode.P_LOCMERGE]: {
-        require: ['p_active_player']
+        require: ['p_active_player'],
+        require2: ['p_active_player2']
     },
     [ScriptOpcode.P_LOGOUT]: {
-        require: ['p_active_player']
+        require: ['p_active_player'],
+        require2: ['p_active_player2']
     },
     [ScriptOpcode.P_PREVENTLOGOUT]: {
         require: ['p_active_player'],
         require2: ['p_active_player2']
-    },
-    [ScriptOpcode.P_OPHELD]: {
-        require: ['p_active_player']
     },
     [ScriptOpcode.P_OPLOC]: {
         require: ['p_active_player', 'active_loc']
@@ -366,16 +411,16 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.P_PAUSEBUTTON]: {
         require: ['p_active_player'],
+        require2: ['p_active_player2'],
         set: ['last_com'],
+        set2: ['last_com'],
         corrupt: [
-            // everything except active is assumed corrupted
-            ...POINTER_GROUP_FIND,
-            'last_int',
-            'last_item',
-            'last_slot',
-            'last_targetslot',
-            'last_useitem',
-            'last_useslot'
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player2'
+        ],
+        corrupt2: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player'
         ]
     },
     [ScriptOpcode.P_STOPACTION]: {
@@ -406,12 +451,17 @@ const ScriptOpcodePointers: {
         require: ['active_player'],
         require2: ['active_player2']
     },
+    [ScriptOpcode.STRONGQUEUE]: {
+        require: ['active_player'],
+        require2: ['active_player2']
+    },
     [ScriptOpcode.SAY]: {
         require: ['active_player'],
         require2: ['active_player2']
     },
     [ScriptOpcode.SETIDKIT]: {
-        require: ['p_active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.WALKTRIGGER]: {
         require: ['active_player'],
@@ -470,19 +520,25 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.FINDHERO]: {
+        require: ['active_player'],
+        require2: ['active_player2'],
         set: ['active_player2'],
         set2: ['active_player'],
+        corrupt: ['p_active_player2'],
+        corrupt2: ['p_active_player'],
         conditional: true
     },
     [ScriptOpcode.BOTH_HEROPOINTS]: {
         require: ['active_player', 'active_player2'],
-        require2: ['active_player2', 'active_player']
+        require2: ['active_player', 'active_player2']
     },
     [ScriptOpcode.SETGENDER]: {
-        require: ['p_active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.SETSKINCOLOUR]: {
-        require: ['p_active_player']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.P_ANIMPROTECT]: {
         require: ['p_active_player'],
@@ -493,16 +549,25 @@ const ScriptOpcodePointers: {
         require2: ['active_player2']
     },
     [ScriptOpcode.WEIGHT]: {
-        require: ['p_active_player'],
-        require2: ['p_active_player2']
+        require: ['active_player'],
+        require2: ['active_player2']
     },
     [ScriptOpcode.LAST_COORD]: {
         require: ['active_player'],
         require2: ['active_player2']
     },
     [ScriptOpcode.P_RUN]: {
-        require: ['active_player'],
-        require2: ['active_player2']
+        require: ['p_active_player'],
+        require2: ['p_active_player2']
+    },
+    [ScriptOpcode.AFK_EVENT]: {
+        require: ['active_player']
+    },
+    [ScriptOpcode.SESSION_LOG]: {
+        require: ['active_player']
+    },
+    [ScriptOpcode.WEALTH_LOG]: {
+        require: ['active_player']
     },
 
     // Npc ops
@@ -540,19 +605,17 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.NPC_DELAY]: {
         require: ['active_npc'],
+        require2: ['active_npc2'],
         corrupt: [
+            ...POINTER_GROUP_NONACTIVE,
             'p_active_player',
-            'p_active_player2',
-            ...POINTER_GROUP_FIND,
-            'last_com',
-            'last_int',
-            'last_item',
-            'last_slot',
-            'last_targetslot',
-            'last_useitem',
-            'last_useslot'
+            'p_active_player2'
         ],
-        require2: ['active_npc2']
+        corrupt2: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player',
+            'p_active_player2'
+        ],
     },
     [ScriptOpcode.NPC_FACESQUARE]: {
         require: ['active_npc'],
@@ -574,6 +637,7 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.NPC_FINDNEXT]: {
         require: ['find_npc'],
+        require2: ['find_npc'],
         set: ['active_npc'],
         set2: ['active_npc2'],
         conditional: true
@@ -585,8 +649,11 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.NPC_FINDHERO]: {
         require: ['active_npc'],
+        require2: ['active_npc2'],
         set: ['active_player'],
         set2: ['active_player'],
+        corrupt: ['p_active_player'],
+        corrupt2: ['p_active_player'],
         conditional: true
     },
     [ScriptOpcode.NPC_FINDUID]: {
@@ -599,7 +666,8 @@ const ScriptOpcodePointers: {
         require2: ['active_npc2']
     },
     [ScriptOpcode.NPC_HEROPOINTS]: {
-        require: ['active_npc', 'active_player']
+        require: ['active_npc', 'active_player'],
+        require2: ['active_npc2', 'active_player']
     },
     [ScriptOpcode.NPC_NAME]: {
         require: ['active_npc'],
@@ -687,19 +755,17 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.NPC_ARRIVEDELAY]: {
         require: ['active_npc'],
+        require2: ['active_npc2'],
         corrupt: [
+            ...POINTER_GROUP_NONACTIVE,
             'p_active_player',
-            'p_active_player2',
-            ...POINTER_GROUP_FIND,
-            'last_com',
-            'last_int',
-            'last_item',
-            'last_slot',
-            'last_targetslot',
-            'last_useitem',
-            'last_useslot'
+            'p_active_player2'
         ],
-        require2: ['active_npc2']
+        corrupt2: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player',
+            'p_active_player2'
+        ]
     },
 
     // Loc ops
@@ -737,13 +803,12 @@ const ScriptOpcodePointers: {
         conditional: true
     },
     [ScriptOpcode.LOC_FINDALLZONE]: {
-        set: ['find_loc'],
-        set2: ['find_loc']
+        set: ['find_loc']
     },
     [ScriptOpcode.LOC_FINDNEXT]: {
         require: ['find_loc'],
-        set: ['active_loc'],
         require2: ['find_loc'],
+        set: ['active_loc'],
         set2: ['active_loc2'],
         conditional: true
     },
@@ -767,9 +832,9 @@ const ScriptOpcodePointers: {
     // Obj ops
     [ScriptOpcode.OBJ_ADD]: {
         require: ['active_player'],
+        require2: ['active_player2'],
         set: ['active_obj'],
-        require2: ['active_player'],
-        set2: ['active_obj2']
+        set2: ['active_obj']
     },
     [ScriptOpcode.OBJ_ADDALL]: {
         set: ['active_obj'],
@@ -796,16 +861,15 @@ const ScriptOpcodePointers: {
         require2: ['active_obj2']
     },
     [ScriptOpcode.OBJ_TAKEITEM]: {
-        require: ['active_obj', 'active_player'],
-        require2: ['active_obj', 'active_player2']
+        require: ['active_obj', 'active_player']
     },
     [ScriptOpcode.OBJ_TYPE]: {
         require: ['active_obj'],
         require2: ['active_obj2']
     },
     [ScriptOpcode.OBJ_FIND]: {
-        set: ['active_obj'],
-        set2: ['active_obj2']
+        require: ['active_player'],
+        set: ['active_obj']
     },
 
     // Inventory ops
@@ -832,14 +896,10 @@ const ScriptOpcodePointers: {
     [ScriptOpcode.INV_DROPITEM]: {
         require: ['active_player'],
         set: ['active_obj'],
-        require2: ['active_player2'],
-        set2: ['active_obj2']
     },
     [ScriptOpcode.INV_DROPSLOT]: {
         require: ['active_player'],
         set: ['active_obj'],
-        require2: ['active_player2'],
-        set2: ['active_obj2']
     },
     [ScriptOpcode.INV_FREESPACE]: {
         require: ['active_player'],
@@ -871,7 +931,7 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.BOTH_MOVEINV]: {
         require: ['active_player', 'active_player2'],
-        require2: ['active_player2', 'active_player']
+        require2: ['active_player', 'active_player2']
     },
     [ScriptOpcode.INV_MOVEITEM]: {
         require: ['active_player'],
@@ -903,7 +963,7 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.INVOTHER_TRANSMIT]: {
         require: ['active_player', 'active_player2'],
-        require2: ['active_player2', 'active_player']
+        require2: ['active_player', 'active_player2']
     },
     [ScriptOpcode.INV_STOPTRANSMIT]: {
         require: ['active_player'],
@@ -911,7 +971,7 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.BOTH_DROPSLOT]: {
         require: ['active_player', 'active_player2'],
-        require2: ['active_player2', 'active_player']
+        require2: ['active_player', 'active_player2']
     },
     [ScriptOpcode.INV_DROPALL]: {
         require: ['active_player'],
@@ -941,6 +1001,15 @@ const ScriptOpcodePointers: {
     },
     [ScriptOpcode.DB_FIND_REFINE]: {
         require: ['find_db']
+    },
+
+    // Server ops
+    [ScriptOpcode.WORLD_DELAY]: {
+        corrupt: [
+            ...POINTER_GROUP_NONACTIVE,
+            'p_active_player',
+            'p_active_player2'
+        ]
     }
 };
 

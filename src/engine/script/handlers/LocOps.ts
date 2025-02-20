@@ -6,7 +6,6 @@ import {ParamHelper} from '#/cache/config/ParamHelper.js';
 import World from '#/engine/World.js';
 
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
-import ScriptPointer, {ActiveLoc, checkedHandler} from '#/engine/script/ScriptPointer.js';
 import {CommandHandlers} from '#/engine/script/ScriptRunner.js';
 import {LocIterator} from '#/engine/script/ScriptIterators.js';
 
@@ -46,37 +45,43 @@ const LocOps: CommandHandlers = {
             }
         }
         World.addLoc(created, duration);
-        state.activeLoc = created;
-        state.pointerAdd(ActiveLoc[state.intOperand]);
+        const primary = state.intOperand === 0;
+        state.setActiveLoc(primary, created);
     },
 
-    [ScriptOpcode.LOC_ANGLE]: checkedHandler(ActiveLoc, state => {
-        state.pushInt(check(state.activeLoc.angle, LocAngleValid));
-    }),
+    [ScriptOpcode.LOC_ANGLE]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(check(state.activeLoc(primary).angle, LocAngleValid));
+    },
 
     // https://x.com/JagexAsh/status/1773801749175812307
-    [ScriptOpcode.LOC_ANIM]: checkedHandler(ActiveLoc, state => {
+    [ScriptOpcode.LOC_ANIM]: state => {
         const seqType: SeqType = check(state.popInt(), SeqTypeValid);
 
-        World.animLoc(state.activeLoc, seqType.id);
-    }),
+        const primary = state.intOperand === 0;
+        World.animLoc(state.activeLoc(primary), seqType.id);
+    },
 
-    [ScriptOpcode.LOC_CATEGORY]: checkedHandler(ActiveLoc, state => {
-        state.pushInt(check(state.activeLoc.type, LocTypeValid).category);
-    }),
+    [ScriptOpcode.LOC_CATEGORY]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(check(state.activeLoc(primary).type, LocTypeValid).category);
+    },
 
-    [ScriptOpcode.LOC_CHANGE]: checkedHandler(ActiveLoc, state => {
+    [ScriptOpcode.LOC_CHANGE]: state => {
         const [id, duration] = state.popInts(2);
 
         const locType: LocType = check(id, LocTypeValid);
         check(duration, DurationValid);
 
-        World.removeLoc(state.activeLoc, duration);
+        const primary = state.intOperand === 0;
+        const loc = state.activeLoc(primary);
+
+        World.removeLoc(loc, duration);
 
         // const loc = new Loc(state.activeLoc.level, state.activeLoc.x, state.activeLoc.z, locType.width, locType.length, EntityLifeCycle.DESPAWN, id, state.activeLoc.shape, state.activeLoc.angle);
         // World.addLoc(loc, duration);
 
-        const {level, x, z, angle, shape} = state.activeLoc;
+        const {level, x, z, angle, shape} = loc;
         const created: Loc = new Loc(level, x, z, locType.width, locType.length, EntityLifeCycle.DESPAWN, locType.id, shape, angle);
         const locs: IterableIterator<Loc> = World.gameMap.getZone(x, z, level).getLocsUnsafe(CoordGrid.packZoneCoord(x, z));
         for (const loc of locs) {
@@ -86,28 +91,32 @@ const LocOps: CommandHandlers = {
             }
         }
         World.addLoc(created, duration);
-        state.activeLoc = created;
-        state.pointerAdd(ActiveLoc[state.intOperand]);
-    }),
+        state.setActiveLoc(primary, created);
+    },
 
-    [ScriptOpcode.LOC_COORD]: checkedHandler(ActiveLoc, state => {
-        const coord: CoordGrid = state.activeLoc;
-        state.pushInt(CoordGrid.packCoord(coord.level, coord.x, coord.z));
-    }),
+    [ScriptOpcode.LOC_COORD]: state => {
+        const primary = state.intOperand === 0;
+        const loc = state.activeLoc(primary);
 
-    [ScriptOpcode.LOC_DEL]: checkedHandler(ActiveLoc, state => {
+        state.pushInt(CoordGrid.packCoord(loc.level, loc.x, loc.z));
+    },
+
+    [ScriptOpcode.LOC_DEL]: state => {
         const duration: number = check(state.popInt(), DurationValid);
 
-        const {level, x, z, angle, shape} = state.activeLoc;
+        const primary = state.intOperand === 0;
+        const loc = state.activeLoc(primary);
+
+        const {level, x, z, angle, shape} = loc;
         const locs: IterableIterator<Loc> = World.gameMap.getZone(x, z, level).getLocsUnsafe(CoordGrid.packZoneCoord(x, z));
         for (const loc of locs) {
-            if (loc !== state.activeLoc && loc.angle === angle && loc.shape === shape) {
+            if (loc !== loc && loc.angle === angle && loc.shape === shape) {
                 World.removeLoc(loc, duration);
                 break;
             }
         }
-        World.removeLoc(state.activeLoc, duration);
-    }),
+        World.removeLoc(loc, duration);
+    },
 
     [ScriptOpcode.LOC_FIND]: state => {
         const [coord, locId] = state.popInts(2);
@@ -121,8 +130,8 @@ const LocOps: CommandHandlers = {
             return;
         }
 
-        state.activeLoc = loc;
-        state.pointerAdd(ActiveLoc[state.intOperand]);
+        const primary = state.intOperand === 0;
+        state.setActiveLoc(primary, loc);
         state.pushInt(1);
     },
 
@@ -130,11 +139,6 @@ const LocOps: CommandHandlers = {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
         state.locIterator = new LocIterator(World.currentTick, coord.level, coord.x, coord.z);
-        // not necessary but if we want to refer to the original loc again, we can
-        if (state._activeLoc) {
-            state._activeLoc2 = state._activeLoc;
-            state.pointerAdd(ScriptPointer.ActiveLoc2);
-        }
     },
 
     [ScriptOpcode.LOC_FINDNEXT]: state => {
@@ -144,33 +148,37 @@ const LocOps: CommandHandlers = {
             return;
         }
 
-        state.activeLoc = result.value;
-        state.pointerAdd(ActiveLoc[state.intOperand]);
+        const primary = state.intOperand === 0;
+        state.setActiveLoc(primary, result.value);
         state.pushInt(1);
     },
 
-    [ScriptOpcode.LOC_PARAM]: checkedHandler(ActiveLoc, state => {
+    [ScriptOpcode.LOC_PARAM]: state => {
         const paramType: ParamType = check(state.popInt(), ParamTypeValid);
 
-        const locType: LocType = check(state.activeLoc.type, LocTypeValid);
+        const primary = state.intOperand === 0;
+        const locType: LocType = check(state.activeLoc(primary).type, LocTypeValid);
         if (paramType.isString()) {
             state.pushString(ParamHelper.getStringParam(paramType.id, locType, paramType.defaultString));
         } else {
             state.pushInt(ParamHelper.getIntParam(paramType.id, locType, paramType.defaultInt));
         }
-    }),
+    },
 
-    [ScriptOpcode.LOC_TYPE]: checkedHandler(ActiveLoc, state => {
-        state.pushInt(check(state.activeLoc.type, LocTypeValid).id);
-    }),
+    [ScriptOpcode.LOC_TYPE]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(check(state.activeLoc(primary).type, LocTypeValid).id);
+    },
 
-    [ScriptOpcode.LOC_NAME]: checkedHandler(ActiveLoc, state => {
-        state.pushString(check(state.activeLoc.type, LocTypeValid).name ?? 'null');
-    }),
+    [ScriptOpcode.LOC_NAME]: state => {
+        const primary = state.intOperand === 0;
+        state.pushString(check(state.activeLoc(primary).type, LocTypeValid).name ?? 'null');
+    },
 
-    [ScriptOpcode.LOC_SHAPE]: checkedHandler(ActiveLoc, state => {
-        state.pushInt(check(state.activeLoc.shape, LocShapeValid));
-    })
+    [ScriptOpcode.LOC_SHAPE]: state => {
+        const primary = state.intOperand === 0;
+        state.pushInt(check(state.activeLoc(primary).shape, LocShapeValid));
+    }
 };
 
 export default LocOps;

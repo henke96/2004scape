@@ -65,7 +65,7 @@ if (inv_total(inv, net) < 1 & inv_freespace(inv) > 0) {
 npc_findallzone(0_48_48_29_20);
 while (npc_findnext = true) {
     if (npc_coord = 0_48_48_29_20 & npc_type = tut_fishing_spot) {
-        hint_npc(npc_uid);
+        hint_npc;
     }
 }
 inv_add(inv, net, 1);
@@ -147,7 +147,7 @@ switch_int($choice) {
 
 [proc,set_hint_icon_survival_guide]
 if (npc_find(0_48_48_31_23, survival_expert, 10, 0) = true) {
-    hint_npc(npc_uid);
+    hint_npc;
 }
 
 

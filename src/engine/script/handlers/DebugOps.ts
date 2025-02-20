@@ -81,6 +81,22 @@ const DebugOps: CommandHandlers = {
             state.pushInt(elapsed);
         }
     },
+
+    [ScriptOpcode.NPCCOUNT]: state => {
+        state.pushInt(World.getTotalNpcs());
+    },
+
+    [ScriptOpcode.ZONECOUNT]: state => {
+        state.pushInt(World.gameMap.getTotalZones());
+    },
+
+    [ScriptOpcode.LOCCOUNT]: state => {
+        state.pushInt(World.gameMap.getTotalLocs());
+    },
+
+    [ScriptOpcode.OBJCOUNT]: state => {
+        state.pushInt(World.gameMap.getTotalObjs());
+    },
 };
 
 export default DebugOps;
