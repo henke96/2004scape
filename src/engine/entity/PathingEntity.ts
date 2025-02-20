@@ -24,6 +24,8 @@ import { CollisionFlag, CollisionType } from '@2004scape/rsmod-pathfinder';
 import { canTravel, changeNpcCollision, changePlayerCollision, findNaivePath, findPath, findPathToEntity, findPathToLoc, isApproached, isMapBlocked, reachedEntity, reachedLoc, reachedObj } from '#/engine/GameMap.js';
 import NonPathingEntity from '#/engine/entity/NonPathingEntity.js';
 import Visibility from '#/engine/entity/Visibility.js';
+import ScriptState from '../script/ScriptState.js';
+import ScriptRunner from '../script/ScriptRunner.js';
 
 type TargetSubject = {
     type: number;
@@ -63,7 +65,7 @@ export default abstract class PathingEntity extends Entity {
     walktrigger: number = -1;
     walktriggerArg: number = 0; // used for npcs
 
-    delayed: boolean = false;
+    suspendedScript: ScriptState | null = null;
     delayedUntil: number = -1;
     interacted: boolean = false;
     repathed: boolean = false;
@@ -591,6 +593,17 @@ export default abstract class PathingEntity extends Entity {
         this.targetSubject = { type: -1, com: -1 };
         this.apRange = 10;
         this.apRangeCalled = false;
+    }
+
+    delayed(): boolean {
+        return this.suspendedScript?.execution === ScriptState.DELAYED;
+    }
+
+    cancelSuspendedScript() {
+        if (this.suspendedScript !== null) {
+            ScriptRunner.cleanup(this.suspendedScript);
+            this.suspendedScript = null;
+        }
     }
 
     protected getCollisionStrategy(): CollisionType | null {

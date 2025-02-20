@@ -1,7 +1,6 @@
 import DbTableType from '#/cache/config/DbTableType.js';
 
 import ScriptFile from '#/engine/script/ScriptFile.js';
-import ScriptPointer from '#/engine/script/ScriptPointer.js';
 import ServerTriggerType from '#/engine/script/ServerTriggerType.js';
 
 import Entity from '#/engine/entity/Entity.js';
@@ -30,11 +29,9 @@ export default class ScriptState {
     static readonly ABORTED = -1;
     static readonly RUNNING = 0;
     static readonly FINISHED = 1;
-    static readonly SUSPENDED = 2; // suspended to move to player
+    static readonly DELAYED = 2;
     static readonly PAUSEBUTTON = 3;
     static readonly COUNTDIALOG = 4;
-    static readonly NPC_SUSPENDED = 5; // suspended to move to npc
-    static readonly WORLD_SUSPENDED = 6; // suspended to move to world
 
     // interpreter
     script: ScriptFile;
@@ -59,11 +56,6 @@ export default class ScriptState {
 
     intLocals: number[] = [];
     stringLocals: string[] = [];
-
-    /**
-     * Contains flags representing `ScriptPointer`s.
-     */
-    private pointers: number = 0;
 
     // server
     /**
@@ -148,74 +140,22 @@ export default class ScriptState {
         }
     }
 
-    /**
-     * Sets pointers to only the ones supplied.
-     *
-     * @param pointers The pointers to set.
-     */
-    pointerSet(...pointers: ScriptPointer[]) {
-        this.pointers = 0;
-        for (let i = 0; i < pointers.length; i++) {
-            this.pointers |= 1 << pointers[i];
+    activePlayerOrNull(): Player | null {
+        return this.intOperand === 0 ? this._activePlayer : this._activePlayer2;
+    }
+
+    corruptActivePlayerProtectedAccess() {
+        const player = this.activePlayerOrNull();
+        if (player?.protectedAccessScript === this) {
+            player.protectedAccessScript = null;
         }
-    }
-
-    /**
-     * Adds `pointer` to the state.
-     *
-     * @param pointer The pointer to add.
-     */
-    pointerAdd(pointer: ScriptPointer) {
-        this.pointers |= 1 << pointer;
-    }
-
-    /**
-     * Removes `pointer` from the state.
-     *
-     * @param pointer The point to remove.
-     */
-    pointerRemove(pointer: ScriptPointer) {
-        this.pointers &= ~(1 << pointer);
-    }
-
-    pointerGet(pointer: ScriptPointer): boolean {
-        return (this.pointers & (1 << pointer)) != 0;
-    }
-
-    /**
-     * Verifies all `pointers` are enabled.
-     *
-     * @param pointers The pointers to check for.
-     */
-    pointerCheck(...pointers: ScriptPointer[]) {
-        for (let i = 0; i < pointers.length; i++) {
-            const flag = 1 << pointers[i];
-            if ((this.pointers & flag) != flag) {
-                throw new Error(`Required pointer: ${ScriptState.pointerPrint(flag)}, current: ${ScriptState.pointerPrint(this.pointers)}`);
-            }
-        }
-    }
-
-    /**
-     * Pretty prints all enables flags using the names from `ScriptPointer`.
-     *
-     * @param flags The flags to print.
-     */
-    private static pointerPrint(flags: number): string {
-        let text = '';
-        for (let i = 0; i < ScriptPointer._LAST; i++) {
-            if ((flags & (1 << i)) != 0) {
-                text += `${ScriptPointer[i]}, `;
-            }
-        }
-        return text.substring(0, text.lastIndexOf(','));
     }
 
     /**
      * Gets the active player. Automatically checks the operand to determine primary and secondary.
      */
-    get activePlayer() {
-        const player = this.intOperand === 0 ? this._activePlayer : this._activePlayer2;
+    get activePlayer(): Player {
+        const player = this.activePlayerOrNull();
         if (player === null) {
             throw new Error('Attempt to access null active_player');
         }
@@ -226,11 +166,47 @@ export default class ScriptState {
      * Sets the active player. Automatically checks the operand to determine primary and secondary.
      * @param player The player to set.
      */
-    set activePlayer(player: Player) {
+    set activePlayer(player: Player | null) {
+        this.corruptActivePlayerProtectedAccess();
         if (this.intOperand === 0) {
             this._activePlayer = player;
         } else {
             this._activePlayer2 = player;
+        }
+    }
+
+    inactivePlayerOrNull(): Player | null {
+        return this.intOperand === 0 ? this._activePlayer2 : this._activePlayer;
+    }
+
+    corruptInactivePlayerProtectedAccess() {
+        const player = this.inactivePlayerOrNull();
+        if (player?.protectedAccessScript === this) {
+            player.protectedAccessScript = null;
+        }
+    }
+
+    /**
+     * Gets the inactive player. Automatically checks the operand to determine primary and secondary.
+     */
+    get inactivePlayer(): Player {
+        const player = this.inactivePlayerOrNull();
+        if (player === null) {
+            throw new Error('Attempt to access null active_player');
+        }
+        return player;
+    }
+
+    /**
+     * Sets the inactive player. Automatically checks the operand to determine primary and secondary.
+     * @param player The player to set.
+     */
+    set inactivePlayer(player: Player | null) {
+        this.corruptInactivePlayerProtectedAccess();
+        if (this.intOperand === 0) {
+            this._activePlayer2 = player;
+        } else {
+            this._activePlayer = player;
         }
     }
 
@@ -401,6 +377,5 @@ export default class ScriptState {
         this.ssp = 0;
         this.intLocals = [];
         this.stringLocals = [];
-        this.pointers = 0;
     }
 }

@@ -27,6 +27,8 @@ import NpcStat from '#/engine/entity/NpcStat.js';
 import HitType from '#/engine/entity/HitType.js';
 import {PlayerStat} from '#/engine/entity/PlayerStat.js';
 import MapFindSqaureType from '#/engine/entity/MapFindSquareType.js';
+import ScriptState from './ScriptState.js';
+import { CommandHandler } from './ScriptRunner.js';
 
 interface ScriptValidator<T, R> {
     validate(input: T): R;
@@ -137,4 +139,18 @@ export const SkinColourValid: ScriptValidator<number, number> = new ScriptInputR
 
 export function check<T, R>(input: T, validator: ScriptValidator<T, R>): R {
     return validator.validate(input);
+}
+
+/**
+ * Wraps a command handler in a function that will validate protected access on the active player.
+ *
+ * @param handler The handler to run after validating protected access.
+ */
+export function protectedAccessHandler(handler: CommandHandler) {
+    return function (state: ScriptState) {
+        if (state.activePlayer.protectedAccessScript !== state) {
+            throw new Error(`Script ${state.script.name} violating protected access check!`);
+        }
+        handler(state);
+    };
 }

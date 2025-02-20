@@ -1,6 +1,5 @@
 import ScriptFile from '#/engine/script/ScriptFile.js';
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
-import ScriptPointer from '#/engine/script/ScriptPointer.js';
 import ScriptState from '#/engine/script/ScriptState.js';
 
 import CoreOps from '#/engine/script/handlers/CoreOps.js';
@@ -68,49 +67,37 @@ export default class ScriptRunner {
 
         if (self instanceof Player) {
             state._activePlayer = self;
-            state.pointerAdd(ScriptPointer.ActivePlayer);
         } else if (self instanceof Npc) {
             state._activeNpc = self;
-            state.pointerAdd(ScriptPointer.ActiveNpc);
         } else if (self instanceof Loc) {
             state._activeLoc = self;
-            state.pointerAdd(ScriptPointer.ActiveLoc);
         } else if (self instanceof Obj) {
             state._activeObj = self;
-            state.pointerAdd(ScriptPointer.ActiveObj);
         }
 
         if (target instanceof Player) {
             if (self instanceof Player) {
                 state._activePlayer2 = target;
-                state.pointerAdd(ScriptPointer.ActivePlayer2);
             } else {
                 state._activePlayer = target;
-                state.pointerAdd(ScriptPointer.ActivePlayer);
             }
         } else if (target instanceof Npc) {
             if (self instanceof Npc) {
                 state._activeNpc2 = target;
-                state.pointerAdd(ScriptPointer.ActiveNpc2);
             } else {
                 state._activeNpc = target;
-                state.pointerAdd(ScriptPointer.ActiveNpc);
             }
         } else if (target instanceof Loc) {
             if (self instanceof Loc) {
                 state._activeLoc2 = target;
-                state.pointerAdd(ScriptPointer.ActiveLoc2);
             } else {
                 state._activeLoc = target;
-                state.pointerAdd(ScriptPointer.ActiveLoc);
             }
         } else if (target instanceof Obj) {
             if (self instanceof Obj) {
                 state._activeObj2 = target;
-                state.pointerAdd(ScriptPointer.ActiveObj2);
             } else {
                 state._activeObj = target;
-                state.pointerAdd(ScriptPointer.ActiveObj);
             }
         }
 
@@ -224,7 +211,17 @@ export default class ScriptRunner {
             state.execution = ScriptState.ABORTED;
         }
 
+        if (state.execution === ScriptState.ABORTED || state.execution === ScriptState.FINISHED) {
+            ScriptRunner.cleanup(state);
+        }
+
         return state.execution;
+    }
+
+    static cleanup(state: ScriptState) {
+        // make sure protected access is released
+        state.corruptActivePlayerProtectedAccess();
+        state.corruptInactivePlayerProtectedAccess();
     }
 
     static executeInner(state: ScriptState, opcode: number) {

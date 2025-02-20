@@ -6,7 +6,6 @@ import SpotanimType from '#/cache/config/SpotanimType.js';
 import World from '#/engine/World.js';
 
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
-import ScriptPointer, {ActiveNpc, checkedHandler} from '#/engine/script/ScriptPointer.js';
 import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 import ScriptState from '#/engine/script/ScriptState.js';
@@ -53,7 +52,6 @@ const NpcOps: CommandHandlers = {
         }
 
         state.activeNpc = npc;
-        state.pointerAdd(ActiveNpc[state.intOperand]);
         state.pushInt(1);
     },
 
@@ -67,47 +65,52 @@ const NpcOps: CommandHandlers = {
         const npc = new Npc(position.level, position.x, position.z, npcType.size, npcType.size, EntityLifeCycle.DESPAWN, World.getNextNid(), npcType.id, npcType.moverestrict, npcType.blockwalk);
         World.addNpc(npc, duration);
         state.activeNpc = npc;
-        state.pointerAdd(ActiveNpc[state.intOperand]);
     },
 
-    [ScriptOpcode.NPC_ANIM]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_ANIM]: state => {
         const delay = check(state.popInt(), NumberNotNull);
         const seq = state.popInt();
 
         state.activeNpc.playAnimation(seq, delay);
-    }),
+    },
 
-    [ScriptOpcode.NPC_BASESTAT]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_BASESTAT]: state => {
         const stat = check(state.popInt(), NpcStatValid);
 
         state.pushInt(state.activeNpc.baseLevels[stat]);
-    }),
+    },
 
-    [ScriptOpcode.NPC_CATEGORY]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_CATEGORY]: state => {
         state.pushInt(check(state.activeNpc.type, NpcTypeValid).category);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1821835323808026853
-    [ScriptOpcode.NPC_COORD]: checkedHandler(ActiveNpc, state => {
-        const coord: CoordGrid = state.activeNpc;
-        state.pushInt(CoordGrid.packCoord(coord.level, coord.x, coord.z));
-    }),
+    [ScriptOpcode.NPC_COORD]: state => {
+        const npc: Npc = state.activeNpc;
+        state.pushInt(CoordGrid.packCoord(npc.level, npc.x, npc.z));
+    },
 
-    [ScriptOpcode.NPC_DEL]: checkedHandler(ActiveNpc, state => {
-        World.removeNpc(state.activeNpc, check(state.activeNpc.type, NpcTypeValid).respawnrate);
-    }),
+    [ScriptOpcode.NPC_DEL]: state => {
+        const npc: Npc = state.activeNpc;
+        World.removeNpc(npc, check(npc.type, NpcTypeValid).respawnrate);
+    },
 
-    [ScriptOpcode.NPC_DELAY]: checkedHandler(ActiveNpc, state => {
-        state.activeNpc.delayed = true;
+    [ScriptOpcode.NPC_DELAY]: state => {
+        // npcs don't have protected access, so delays can be overridden
+        state.activeNpc.cancelSuspendedScript();
+
         state.activeNpc.delayedUntil = World.currentTick + 1 + check(state.popInt(), NumberNotNull);
-        state.execution = ScriptState.NPC_SUSPENDED;
-    }),
+        state.activeNpc.suspendedScript = state;
+        state.execution = ScriptState.DELAYED;
+        state.corruptActivePlayerProtectedAccess();
+        state.corruptInactivePlayerProtectedAccess();
+    },
 
-    [ScriptOpcode.NPC_FACESQUARE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_FACESQUARE]: state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
         state.activeNpc.faceSquare(coord.x, coord.z);
-    }),
+    },
 
     [ScriptOpcode.NPC_FINDEXACT]: state => {
         const [coord, id] = state.popInts(2);
@@ -120,7 +123,6 @@ const NpcOps: CommandHandlers = {
         for (const npc of state.npcIterator) {
             if (npc.type === npcType.id && npc.x === position.x && npc.level === position.level && npc.z === position.z) {
                 state.activeNpc = npc;
-                state.pointerAdd(ActiveNpc[state.intOperand]);
                 state.pushInt(1);
                 return;
             }
@@ -129,7 +131,7 @@ const NpcOps: CommandHandlers = {
         return;
     },
 
-    [ScriptOpcode.NPC_FINDHERO]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_FINDHERO]: state => {
         const uid = state.activeNpc.heroPoints.findHero();
         if (uid === -1) {
             state.pushInt(0);
@@ -141,13 +143,15 @@ const NpcOps: CommandHandlers = {
             state.pushInt(0);
             return;
         }
-
-        state.activePlayer = player;
-        state.pointerAdd(ScriptPointer.ActivePlayer);
+        // always set the primary player
+        if (state._activePlayer?.protectedAccessScript === state) {
+            state._activePlayer.protectedAccessScript = null;
+        }
+        state._activePlayer = player;
         state.pushInt(1);
-    }),
+    },
 
-    [ScriptOpcode.NPC_PARAM]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_PARAM]: state => {
         const paramType: ParamType = check(state.popInt(), ParamTypeValid);
 
         const npcType: NpcType = check(state.activeNpc.type, NpcTypeValid);
@@ -156,10 +160,10 @@ const NpcOps: CommandHandlers = {
         } else {
             state.pushInt(ParamHelper.getIntParam(paramType.id, npcType, paramType.defaultInt));
         }
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1570357528172859392
-    [ScriptOpcode.NPC_QUEUE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_QUEUE]: state => {
         const delay = check(state.popInt(), NumberNotNull);
         const arg = state.popInt();
         const queueId = check(state.popInt(), QueueValid);
@@ -170,9 +174,9 @@ const NpcOps: CommandHandlers = {
         if (script) {
             state.activeNpc.enqueueScript(script, delay, arg);
         }
-    }),
+    },
 
-    [ScriptOpcode.NPC_RANGE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_RANGE]: state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
         const npc = state.activeNpc;
@@ -188,17 +192,17 @@ const NpcOps: CommandHandlers = {
                 })
             );
         }
-    }),
+    },
 
-    [ScriptOpcode.NPC_SAY]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_SAY]: state => {
         state.activeNpc.say(state.popString());
-    }),
+    },
 
-    [ScriptOpcode.NPC_SETHUNT]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_SETHUNT]: state => {
         state.activeNpc.huntrange = check(state.popInt(), NumberNotNull);
-    }),
+    },
 
-    [ScriptOpcode.NPC_SETHUNTMODE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_SETHUNTMODE]: state => {
         // TODO is this authentic? or is there npc_clearhuntmode (or similar)?
         const huntTypeId = state.popInt();
 
@@ -207,11 +211,11 @@ const NpcOps: CommandHandlers = {
         } else {
             state.activeNpc.huntMode = check(huntTypeId, HuntTypeValid).id;
         }
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1795184135327089047
     // https://x.com/JagexAsh/status/1821835323808026853
-    [ScriptOpcode.NPC_SETMODE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_SETMODE]: state => {
         const mode = check(state.popInt(), NpcModeValid);
         state.activeNpc.clearWaypoints();
 
@@ -245,15 +249,15 @@ const NpcOps: CommandHandlers = {
         } else {
             state.activeNpc.noMode();
         }
-    }),
+    },
 
-    [ScriptOpcode.NPC_STAT]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_STAT]: state => {
         const stat = check(state.popInt(), NpcStatValid);
 
         state.pushInt(state.activeNpc.levels[stat]);
-    }),
+    },
 
-    [ScriptOpcode.NPC_STATHEAL]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_STATHEAL]: state => {
         const [stat, constant, percent] = state.popInts(3);
 
         check(stat, NpcStatValid);
@@ -270,38 +274,38 @@ const NpcOps: CommandHandlers = {
         if (stat === 0 && npc.levels[stat] === npc.baseLevels[stat]) {
             npc.heroPoints.clear();
         }
-    }),
+    },
 
-    [ScriptOpcode.NPC_TYPE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_TYPE]: state => {
         state.pushInt(check(state.activeNpc.type, NpcTypeValid).id);
-    }),
+    },
 
-    [ScriptOpcode.NPC_DAMAGE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_DAMAGE]: state => {
         const amount = check(state.popInt(), NumberNotNull);
         const type = check(state.popInt(), HitTypeValid);
 
         state.activeNpc.applyDamage(amount, type);
-    }),
+    },
 
-    [ScriptOpcode.NPC_NAME]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_NAME]: state => {
         state.pushString(check(state.activeNpc.type, NpcTypeValid).name ?? 'null');
-    }),
+    },
 
-    [ScriptOpcode.NPC_UID]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_UID]: state => {
         state.pushInt(state.activeNpc.uid);
-    }),
+    },
 
-    [ScriptOpcode.NPC_SETTIMER]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_SETTIMER]: state => {
         state.activeNpc.setTimer(check(state.popInt(), NumberNotNull));
-    }),
+    },
 
-    [ScriptOpcode.SPOTANIM_NPC]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.SPOTANIM_NPC]: state => {
         const delay = check(state.popInt(), NumberNotNull);
         const height = check(state.popInt(), NumberNotNull);
         const spotanimType: SpotanimType = check(state.popInt(), SpotAnimTypeValid);
 
         state.activeNpc.spotanim(spotanimType.id, height, delay);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1796460129430433930
     [ScriptOpcode.NPC_FIND]: state => {
@@ -330,9 +334,7 @@ const NpcOps: CommandHandlers = {
             state.pushInt(0);
             return;
         }
-        // not necessary but if we want to refer to the original npc again, we can
         state.activeNpc = closestNpc;
-        state.pointerAdd(ActiveNpc[state.intOperand]);
         state.pushInt(1);
     },
 
@@ -345,11 +347,6 @@ const NpcOps: CommandHandlers = {
         const huntvis: HuntVis = check(checkVis, HuntVisValid);
 
         state.npcIterator = new NpcIterator(World.currentTick, position.level, position.x, position.z, distance, huntvis, NpcIteratorType.DISTANCE);
-        // not necessary but if we want to refer to the original npc again, we can
-        if (state._activeNpc) {
-            state._activeNpc2 = state._activeNpc;
-            state.pointerAdd(ScriptPointer.ActiveNpc2);
-        }
     },
 
     [ScriptOpcode.NPC_FINDALL]: state => {
@@ -361,22 +358,12 @@ const NpcOps: CommandHandlers = {
         const huntvis: HuntVis = check(checkVis, HuntVisValid);
 
         state.npcIterator = new NpcIterator(World.currentTick, position.level, position.x, position.z, distance, huntvis, NpcIteratorType.DISTANCE, npcType);
-        // not necessary but if we want to refer to the original npc again, we can
-        if (state._activeNpc) {
-            state._activeNpc2 = state._activeNpc;
-            state.pointerAdd(ScriptPointer.ActiveNpc2);
-        }
     },
 
     [ScriptOpcode.NPC_FINDALLZONE]: state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
         state.npcIterator = new NpcIterator(World.currentTick, coord.level, coord.x, coord.z, 0, 0, NpcIteratorType.ZONE);
-        // not necessary but if we want to refer to the original npc again, we can
-        if (state._activeNpc) {
-            state._activeNpc2 = state._activeNpc;
-            state.pointerAdd(ScriptPointer.ActiveNpc2);
-        }
     },
 
     [ScriptOpcode.NPC_FINDNEXT]: state => {
@@ -388,48 +375,47 @@ const NpcOps: CommandHandlers = {
         }
 
         state.activeNpc = result.value;
-        state.pointerAdd(ActiveNpc[state.intOperand]);
         state.pushInt(1);
     },
 
-    [ScriptOpcode.NPC_TELE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_TELE]: state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
         state.activeNpc.teleport(coord.x, coord.z, coord.level);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1821835323808026853
     // https://x.com/JagexAsh/status/1780932943038345562
-    [ScriptOpcode.NPC_WALK]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_WALK]: state => {
         const coord: CoordGrid = check(state.popInt(), CoordValid);
 
         state.activeNpc.queueWaypoint(coord.x, coord.z);
-    }),
+    },
 
-    [ScriptOpcode.NPC_CHANGETYPE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_CHANGETYPE]: state => {
         state.activeNpc.changeType(check(state.popInt(), NpcTypeValid).id);
-    }),
+    },
 
-    [ScriptOpcode.NPC_GETMODE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_GETMODE]: state => {
         state.pushInt(state.activeNpc.targetOp);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1704492467226091853
-    [ScriptOpcode.NPC_HEROPOINTS]: checkedHandler([ScriptPointer.ActivePlayer, ...ActiveNpc], state => {
+    [ScriptOpcode.NPC_HEROPOINTS]: state => {
         state.activeNpc.heroPoints.addHero(state.activePlayer.uid, check(state.popInt(), NumberNotNull));
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1780932943038345562
-    [ScriptOpcode.NPC_WALKTRIGGER]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_WALKTRIGGER]: state => {
         const [queueId, arg] = state.popInts(2);
 
         check(queueId, QueueValid);
 
         state.activeNpc.walktrigger = queueId - 1;
         state.activeNpc.walktriggerArg = arg;
-    }),
+    },
 
-    [ScriptOpcode.NPC_STATADD]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_STATADD]: state => {
         const [stat, constant, percent] = state.popInts(3);
 
         check(stat, NpcStatValid);
@@ -444,9 +430,9 @@ const NpcOps: CommandHandlers = {
         if (stat === 0 && npc.levels[stat] >= npc.baseLevels[stat]) {
             npc.heroPoints.clear();
         }
-    }),
+    },
 
-    [ScriptOpcode.NPC_STATSUB]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_STATSUB]: state => {
         const [stat, constant, percent] = state.popInts(3);
 
         check(stat, NpcStatValid);
@@ -457,15 +443,15 @@ const NpcOps: CommandHandlers = {
         const current = npc.levels[stat];
         const subbed = current - (constant + (current * percent) / 100);
         npc.levels[stat] = Math.max(subbed, 0);
-    }),
+    },
 
     // https://twitter.com/JagexAsh/status/1614498680144527360
-    [ScriptOpcode.NPC_ATTACKRANGE]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_ATTACKRANGE]: state => {
         state.pushInt(check(state.activeNpc.type, NpcTypeValid).attackrange);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1821492251429679257
-    [ScriptOpcode.NPC_HASOP]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_HASOP]: state => {
         const op = state.popInt();
 
         check(op, NumberNotNull);
@@ -478,23 +464,22 @@ const NpcOps: CommandHandlers = {
         }
 
         state.pushInt(npcType.op[op - 1] ? 1 : 0);
-    }),
+    },
 
     // https://x.com/JagexAsh/status/1432296606376906752
-    [ScriptOpcode.NPC_ARRIVEDELAY]: checkedHandler(ActiveNpc, state => {
+    [ScriptOpcode.NPC_ARRIVEDELAY]: state => {
         if (state.activeNpc.lastMovement < World.currentTick - 1) {
             return;
         }
         // If npc moved 1 tick ago, delay for 1 tick. If npc moved this tick, delay for 2 ticks
-        state.activeNpc.delayed = true;
         if (state.activeNpc.lastMovement === World.currentTick - 1) {
             state.activeNpc.delayedUntil = World.currentTick + 1;
         } else {
             state.activeNpc.delayedUntil = World.currentTick + 2;
         }
-        
-        state.execution = ScriptState.NPC_SUSPENDED;
-    }),
+        state.activeNpc.suspendedScript = state;
+        state.execution = ScriptState.DELAYED;
+    },
 };
 
 export default NpcOps;

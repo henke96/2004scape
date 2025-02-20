@@ -151,8 +151,10 @@
 [command,p_aprange](int $range)
 // Requires protected access - if the player moved this cycle, wait a tick before continuing
 [command,p_arrivedelay]
+[command,.p_arrivedelay]
 // Requires protected access - open a number input dialog
 [command,p_countdialog]
+[command,.p_countdialog]
 // Requires protected access - delay this script/the player for $delay cycles
 [command,p_delay](int $delay)
 [command,.p_delay](int $delay)
@@ -438,10 +440,8 @@
 [command,.npc_find](coord $coord, npc $npc, int $distance, int $checkvis)(boolean)
 // Search for npcs in a given area
 [command,npc_findall](coord $coord, npc $npc, int $distance, int $checkvis)
-[command,.npc_findall](coord $coord, npc $npc, int $distance, int $checkvis)
 // Search for any npc in a given area
 [command,npc_findallany](coord $coord, int $distance, int $checkvis)
-[command,.npc_findallany](coord $coord, int $distance, int $checkvis)
 // Return true if a specific npc exists at $coord
 [command,npc_findexact](coord $coord, npc $npc)(boolean)
 [command,.npc_findexact](coord $coord, npc $npc)(boolean)

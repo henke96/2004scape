@@ -4,11 +4,9 @@ import { ParamHelper } from '#/cache/config/ParamHelper.js';
 import ParamType from '#/cache/config/ParamType.js';
 
 import World from '#/engine/World.js';
-import Zone from '#/engine/zone/Zone.js';
 
 import ScriptOpcode from '#/engine/script/ScriptOpcode.js';
-import { ActiveObj, ActivePlayer } from '#/engine/script/ScriptPointer.js';
-import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
+import {CommandHandlers} from '#/engine/script/ScriptRunner.js';
 
 import Obj from '#/engine/entity/Obj.js';
 import { CoordGrid } from '#/engine/CoordGrid.js';
@@ -46,14 +44,12 @@ const ObjOps: CommandHandlers = {
                 World.addObj(obj, state.activePlayer.hash64, duration);
 
                 state.activeObj = obj;
-                state.pointerAdd(ActiveObj[state.intOperand]);
             }
         } else {
             const obj: Obj = new Obj(position.level, position.x, position.z, EntityLifeCycle.DESPAWN, objId, count);
             World.addObj(obj, state.activePlayer.hash64, duration);
 
             state.activeObj = obj;
-            state.pointerAdd(ActiveObj[state.intOperand]);
         }
     },
 
@@ -84,14 +80,12 @@ const ObjOps: CommandHandlers = {
                 World.addObj(obj, Obj.NO_RECEIVER, duration);
 
                 state.activeObj = obj;
-                state.pointerAdd(ActiveObj[state.intOperand]);
             }
         } else {
             const obj: Obj = new Obj(position.level, position.x, position.z, EntityLifeCycle.DESPAWN, objId, count);
             World.addObj(obj, Obj.NO_RECEIVER, duration);
 
             state.activeObj = obj;
-            state.pointerAdd(ActiveObj[state.intOperand]);
         }
     },
 
@@ -114,11 +108,7 @@ const ObjOps: CommandHandlers = {
 
     [ScriptOpcode.OBJ_DEL]: state => {
         const duration: number = ObjType.get(state.activeObj.type).respawnrate;
-        if (state.pointerGet(ActivePlayer[state.intOperand])) {
-            World.removeObj(state.activeObj, duration);
-        } else {
-            World.removeObj(state.activeObj, duration);
-        }
+        World.removeObj(state.activeObj, duration);
     },
 
     [ScriptOpcode.OBJ_COUNT]: state => {
@@ -176,7 +166,6 @@ const ObjOps: CommandHandlers = {
         }
 
         state.activeObj = obj;
-        state.pointerAdd(ActiveObj[state.intOperand]);
         state.pushInt(1);
     }
 

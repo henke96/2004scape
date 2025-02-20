@@ -11,7 +11,6 @@ import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import { CommandHandlers } from '#/engine/script/ScriptRunner.js';
 import ScriptState from '#/engine/script/ScriptState.js';
 import {check, VarNpcValid, VarPlayerValid, VarSharedValid} from '#/engine/script/ScriptValidators.js';
-import {ProtectedActivePlayer} from '#/engine/script/ScriptPointer.js';
 
 const CoreOps: CommandHandlers = {
     [ScriptOpcode.PUSH_CONSTANT_INT]: state => {
